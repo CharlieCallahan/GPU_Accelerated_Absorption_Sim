@@ -41,9 +41,9 @@ static PyObject* runSimF32(PyObject* self, PyObject* args){
 	}
 	
 	PyObject* output = PyTuple_New(2);
-	if ( !(PyTuple_SetItem(output, 0, spectrumList) == 0))
+	if ( !(PyTuple_SetItem(output, 0, wavenumsList) == 0))
 		printf("Set output tuple 0 failed...");
-	if ( !(PyTuple_SetItem(output, 1, wavenumsList) == 0))
+	if ( !(PyTuple_SetItem(output, 1, spectrumList) == 0))
 		printf("Set output tuple 1 failed...");
 		
 	free(spectrumTarget);
@@ -57,7 +57,7 @@ static PyObject* runSimF64(PyObject* self, PyObject* args){
 	double tempK;
 	double pressureAtm;
 	double conc;
-	int wavenumRes;
+	int wavenumRes; //number of wavenumbers to put into wavenum grid
 	double startWavenum;
 	double endWavenum;
 	char* gaasDir;
@@ -89,9 +89,9 @@ static PyObject* runSimF64(PyObject* self, PyObject* args){
 	}
 	
 	PyObject* output = PyTuple_New(2);
-	if ( !(PyTuple_SetItem(output, 0, spectrumList) == 0))
+	if ( !(PyTuple_SetItem(output, 0, wavenumsList) == 0))
 		printf("Set output tuple 0 failed...");
-	if ( !(PyTuple_SetItem(output, 1, wavenumsList) == 0))
+	if ( !(PyTuple_SetItem(output, 1, spectrumList) == 0))
 		printf("Set output tuple 1 failed...");
 		
 	free(spectrumTarget);
