@@ -12,10 +12,11 @@ static PyObject* runSimF32(PyObject* self, PyObject* args){
 	double endWavenum;
 	char* gaasDir;
 	char* moleculeID;
+	int isoNum;
 	char* runID;
 	
 	
-	if (!PyArg_ParseTuple(args, "dddiddsss", &tempK, &pressureAtm, &conc, &wavenumRes, &startWavenum, &endWavenum, &gaasDir, &moleculeID, &runID)){
+	if (!PyArg_ParseTuple(args, "dddiddssis", &tempK, &pressureAtm, &conc, &wavenumRes, &startWavenum, &endWavenum, &gaasDir, &moleculeID, &isoNum, &runID)){
 		return NULL;
 	}
 	
@@ -25,7 +26,7 @@ static PyObject* runSimF32(PyObject* self, PyObject* args){
 	float* spectrumTarget = (float*)malloc(wavenumRes*sizeof(float));//new float [wavenumRes];
 	float* wavenumsTarget = (float*)malloc(wavenumRes*sizeof(float));
 	
-	runSimFloat(tempK, pressureAtm, conc, spectrumTarget, wavenumsTarget, wavenumRes, startWavenum, endWavenum, gaasDir, moleculeID, runID);
+	runSimFloat(tempK, pressureAtm, conc, spectrumTarget, wavenumsTarget, wavenumRes, startWavenum, endWavenum, gaasDir, moleculeID, isoNum, runID);
 	
 	PyObject* spectrumList = PyList_New(wavenumRes);
 	PyObject* wavenumsList = PyList_New(wavenumRes);
@@ -62,17 +63,18 @@ static PyObject* runSimF64(PyObject* self, PyObject* args){
 	double endWavenum;
 	char* gaasDir;
 	char* moleculeID;
+	int isoNum;
 	char* runID;
 	
 	
-	if (!PyArg_ParseTuple(args, "dddiddsss", &tempK, &pressureAtm, &conc, &wavenumRes, &startWavenum, &endWavenum, &gaasDir, &moleculeID, &runID)){
+	if (!PyArg_ParseTuple(args, "dddiddssis", &tempK, &pressureAtm, &conc, &wavenumRes, &startWavenum, &endWavenum, &gaasDir, &moleculeID, &isoNum, &runID)){
 		return NULL;
 	}
 		
 	double* spectrumTarget = (double*)malloc(wavenumRes*sizeof(double));//new float [wavenumRes];
 	double* wavenumsTarget = (double*)malloc(wavenumRes*sizeof(double));
 	
-	runSimDouble(tempK, pressureAtm, conc, spectrumTarget, wavenumsTarget, wavenumRes, startWavenum, endWavenum, gaasDir, moleculeID, runID);
+	runSimDouble(tempK, pressureAtm, conc, spectrumTarget, wavenumsTarget, wavenumRes, startWavenum, endWavenum, gaasDir, moleculeID, isoNum, runID);
 	
 	PyObject* spectrumList = PyList_New(wavenumRes);
 	PyObject* wavenumsList = PyList_New(wavenumRes);
@@ -108,6 +110,7 @@ static PyMethodDef myMethods[] = {
     { "runSimF64", runSimF64, METH_VARARGS, "est" },
     { NULL, NULL, 0, NULL }
 };
+
 // Our Module Definition struct
 static struct PyModuleDef gaasAPI = {
     PyModuleDef_HEAD_INIT,

@@ -1284,10 +1284,10 @@ void gaas::lineshapeSim::simHandler::loadFeatDatabase(std::string databaseFilena
 }
 
 //float 32 run
-void gaas::lineshapeSim::simHandler::runFloat(double tempK, double pressureAtm, double conc, float * spectrumTarget, float * wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum)
+void gaas::lineshapeSim::simHandler::runFloat(double tempK, double pressureAtm, double conc, float * spectrumTarget, float * wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum, double molarMass, double isotopeAbundance)
 {
-	double molarMass = 18.01528;
-	double isotopeAbundance = 0.997;
+	//double molarMass = 18.01528;
+	//double isotopeAbundance = 0.997;
 
 	if (endWavenum <= startWavenum) {
 		std::cout << "ERROR: gaas::lineshapeSim::simHandler::run(double tempK, double pressureAtm, double conc, double * spectrumTarget, double * wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum)\n" 
@@ -1400,10 +1400,10 @@ void gaas::lineshapeSim::simHandler::runFloat(double tempK, double pressureAtm, 
 }
 
 //#if defined(__CUDA_ARCH__) && ( __CUDA_ARCH__ >= 600 ) //double atomic add required for this is only available in cuda arch > 6.0 gpus
-void gaas::lineshapeSim::simHandler::runDouble(double tempK, double pressureAtm, double conc, double* spectrumTarget, double* wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum){
+void gaas::lineshapeSim::simHandler::runDouble(double tempK, double pressureAtm, double conc, double* spectrumTarget, double* wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum, double molarMass, double isotopeAbundance){
 	
-	double molarMass = 18.01528;
-	double isotopeAbundance = 0.997;
+	//double molarMass = 18.01528; h2o
+	//double isotopeAbundance = 0.997;
 
 	if (endWavenum <= startWavenum) {
 		std::cout << "ERROR: gaas::lineshapeSim::simHandler::run(double tempK, double pressureAtm, double conc, double * spectrumTarget, double * wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum)\n" 
