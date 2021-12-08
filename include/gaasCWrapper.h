@@ -1,4 +1,4 @@
-﻿#ifdef WIN64 || WIN32
+﻿#if defined(WIN64) || defined(WIN32)
 
 #ifdef GAAS_EXPORT
 
