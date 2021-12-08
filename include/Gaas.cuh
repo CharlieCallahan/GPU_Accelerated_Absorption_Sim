@@ -33,9 +33,6 @@
 #ifndef Gaas_cuh
 #define Gaas_cuh
 
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-#include <cuComplex.h>
 #include <cmath>
 #include <string>
 #include <vector>
@@ -43,8 +40,11 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include "Stopwatch.hpp"
 #include <map>
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+#include <cuComplex.h>
+#include "Stopwatch.hpp"
 
 #ifdef __cplusplus
 extern "C" {

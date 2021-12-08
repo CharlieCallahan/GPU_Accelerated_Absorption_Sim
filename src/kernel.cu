@@ -1,13 +1,13 @@
 ﻿
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
 #include <stdio.h>
 #include <iostream>
+#include <map>
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
 #include "Gaas.cuh"
 #include "Stopwatch.hpp"
 #include "file_io.hpp"
-#include <map>
+
 
 
 int main()

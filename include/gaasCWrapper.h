@@ -1,6 +1,18 @@
-﻿
+﻿#ifdef WIN64 || WIN32
 
-void runSimFloat(double tempK, double pressureAtm, double conc, float* spectrumTarget, float* wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum, char* gaasDir, char* moleculeID, int isoNum, char* runID); //runs simulation with 32 bit float precision, this works on older GPU architectures with slightly more error due to numerical precision
+#ifdef GAAS_EXPORT
 
-void runSimDouble(double tempK, double pressureAtm, double conc, double* spectrumTarget, double* wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum, char* gaasDir, char* moleculeID, int isoNum, char* runID); //runs simulation with 32 bit float precision, this works on older GPU architectures with slightly more error due to numerical precision
+#define FUNC_PREPEND extern "C" __declspec(dllexport)
+#else
+#define FUNC_PREPEND __declspec(dllimport)
+#endif
+
+#else
+#define FUNC_PREPEND  //linux mac etc (linking to shared object instead of dll)
+#endif
+
+
+FUNC_PREPEND void runSimFloat(double tempK, double pressureAtm, double conc, float* spectrumTarget, float* wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum, char* gaasDir, char* moleculeID, int isoNum, char* runID); //runs simulation with 32 bit float precision, this works on older GPU architectures with slightly more error due to numerical precision
+
+FUNC_PREPEND void runSimDouble(double tempK, double pressureAtm, double conc, double* spectrumTarget, double* wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum, char* gaasDir, char* moleculeID, int isoNum, char* runID); //runs simulation with 32 bit float precision, this works on older GPU architectures with slightly more error due to numerical precision
 
