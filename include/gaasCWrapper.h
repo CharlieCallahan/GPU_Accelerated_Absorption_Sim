@@ -7,8 +7,8 @@
 #define FUNC_PREPEND __declspec(dllimport)
 #endif
 
-#else
-#define FUNC_PREPEND  //linux mac etc (linking to shared object instead of dll)
+#else //linux mac etc (linking to shared object instead of dll)
+#define FUNC_PREPEND  
 #endif
 
 

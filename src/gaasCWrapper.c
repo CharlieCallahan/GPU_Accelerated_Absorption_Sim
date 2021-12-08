@@ -1,4 +1,9 @@
 #include "Gaas.cuh"
+#if !(defined(WIN64) || defined(WIN32))
+extern "C" {
+#endif
+
+#include "gaasCWrapper.h"
 
 /*extern "C"*/ void runSimFloat(double tempK, double pressureAtm, double conc, float* spectrumTarget, float* wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum, char* gaasDir, char* moleculeID, int isoNum, char* runID){
 
@@ -33,3 +38,7 @@ std::cout << "molarMass: " << molarMass << " iso Abundance: "<< isotopeAbundance
 sh.runDouble(tempK,pressureAtm,conc, spectrumTarget, wavenumsTarget, wavenumRes, startWavenum, endWavenum, molarMass, isotopeAbundance);
 
 }
+
+#if !(defined(WIN64) || defined(WIN32))
+}
+#endif

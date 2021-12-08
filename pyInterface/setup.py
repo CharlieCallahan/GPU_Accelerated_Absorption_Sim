@@ -61,7 +61,7 @@ else:
       ext_modules = [Extension('gaasAPI', 
       		     sources = ['gaasPy.c'], 
       		     include_dirs = [rootDir+"/include"],
-      		     extra_link_args=["-L"+rootDir,linkArg,"-lcudart","-lcuda"],
+      		     extra_link_args=["-L"+rootDir,"-lgaasCWrapper","-lcudart","-lcuda"],
       		     extra_objects=[rootDir+"/libgaasCWrapper.so"],
       		     library_dirs=[rootDir]
       		     )]
