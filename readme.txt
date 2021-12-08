@@ -1,22 +1,41 @@
-How to build python library:
+Build & install instructions:
+First install the latest nvidia drivers for your GPU https://www.nvidia.com/Download/index.aspx
 
-linux commands:
+Then install the nvidia cuda toolkit at https://developer.nvidia.com/cuda-downloads
 
-make all
-cd pyInterface
-sudo python3 setup.py build
-sudo python3 setup.py install
+Then from there you should be able to compile the C/C++/Cuda code using gcc/g++/nvcc
 
-Windows commands:
-python3 setup.py build
-python3 setup.py install
+The library can also be built as a python module to be directly swapped in as a much faster replacement of 
+the hapi absorptionCoefficient_Voigt function. 
 
-Supported GPU architectures:
-compute_35,sm_35
-compute_37,sm_37
-compute_50,sm_50
-compute_52,sm_52
-compute_61,sm_61
-compute_70,sm_70
-compute_75,sm_75
-compute_86,sm_86
+To build and install the python library refer to section 1.0 for Linux and 1.1 for Windows.
+
+1.0: Linux python module build+install guide:
+
+	First compile the gaasCWrapper shared object library by running (in a terminal):
+	make all
+
+	Then change into the pyInterface directory (dont try to run the build script without changing directories, it uses the current working directory):
+	cd pyInterface
+
+	Then build and install the python library:
+	sudo python3 setup.py build
+	sudo python3 setup.py install
+
+	If you are using an IDE/virtual environment, you can copy the gaas.py file and the cpython .so file from 
+	pyInterface/build/lib.linux... into the venv/lib/python3.7/site-packages folder to use it from the IDE. 
+
+1.1: Windows python module build+install guide:
+	python3 setup.py build
+	python3 setup.py install
+
+
+2.1: Supported GPU architectures:
+	compute_35,sm_35
+	compute_37,sm_37
+	compute_50,sm_50
+	compute_52,sm_52
+	compute_61,sm_61
+	compute_70,sm_70
+	compute_75,sm_75
+	compute_86,sm_86
