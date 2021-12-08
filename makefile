@@ -12,6 +12,7 @@ OBJS =  \
 REBUILDABLES = $(OBJS) $(TEST_TARGET) $(INIT_TARGET)
 
 CFLAGS =-I$(IDIR) -O3 -fPIC -lstdc++ 
+#NVCCFLAGS = -I$(IDIR) -gencode arch=compute_75,code=sm_75 -lcudart -Xcompiler=-fPIC
 NVCCFLAGS = -I$(IDIR) -gencode arch=compute_35,code=sm_35 -gencode arch=compute_37,code=sm_37 -gencode arch=compute_50,code=sm_50 -gencode arch=compute_52,code=sm_52 -gencode arch=compute_61,code=sm_61 -gencode arch=compute_70,code=sm_70 -gencode arch=compute_75,code=sm_75 -lcudart -Xcompiler=-fPIC
 
 NVCC = nvcc #cuda compiler call

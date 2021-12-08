@@ -24,6 +24,7 @@ def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory
     isotopologues on HITRAN
     :return: void
     """
+    saveAbsorptionDB(moleculeID, isotopologueID, gaasDirectory+moleculeID+"_iso_"+str(isotopologueID)+"_"+id, startWavenum, endWavenum, HITRANParDirectory, loadFromHITRAN=loadFromHITRAN)
 
     # check for TIPS file in gaasDirectory.
     tipsFilename = moleculeID + "_iso_" + str(isotopologueID) + "_tips.csv"
@@ -35,9 +36,6 @@ def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory
     if shouldGenTips:
         print("generating TIPS file")
         gt.generateTIPSFile(moleculeID, isotopologueID, gaasDirectory)
-
-        saveAbsorptionDB(moleculeID, isotopologueID, gaasDirectory+moleculeID+"_iso_"+str(isotopologueID)+"_"+id, startWavenum, endWavenum, HITRANParDirectory, loadFromHITRAN=loadFromHITRAN)
-
 
 def saveAbsorptionDB(moleculeID, isotopologueNum, filename, minWavenum, maxWavenum, hapiLocation, strengthCutoff=0, loadFromHITRAN=False):
     """
@@ -54,11 +52,9 @@ def saveAbsorptionDB(moleculeID, isotopologueNum, filename, minWavenum, maxWaven
 
     ssl._create_default_https_context = ssl._create_unverified_context
     hapi.db_begin(hapiLocation)
-
     if loadFromHITRAN:
         HITRAN_molecules = ['H2O', 'CO2', 'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3',
-                            'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl'                            , 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2',
-                            'NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
+                            'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl', 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2','NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
         molecule_number = (HITRAN_molecules.index(moleculeID)) + 1
         hapi.fetch(moleculeID, molecule_number,
                    isotopologueNum, minWavenum-1, maxWavenum+1)
