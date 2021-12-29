@@ -1,5 +1,10 @@
 Build & install instructions:
-First install the latest nvidia drivers for your GPU https://www.nvidia.com/Download/index.aspx
+
+make sure you have python3 installed
+
+install the latest nvidia drivers for your GPU https://www.nvidia.com/Download/index.aspx
+
+install microsoft visual studio build tools if you are using windows, this downloads the required windows c++ compiler
 
 Then install the nvidia cuda toolkit at https://developer.nvidia.com/cuda-downloads
 
@@ -26,6 +31,8 @@ To build and install the python library refer to section 1.0 for Linux and 1.1 f
 	pyInterface/build/lib.linux... into the venv/lib/python3.7/site-packages folder to use it from the IDE. 
 
 1.1: Windows python module build+install guide:
+	open up an x64 Native Tools Command Prompt (if you dont have this, you need to download microsoft visual studio build tools)
+	go to pyInterface folder
 	python3 setup.py build
 	python3 setup.py install --user
 	
