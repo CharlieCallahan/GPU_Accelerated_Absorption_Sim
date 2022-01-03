@@ -12,8 +12,7 @@
 
 int main()
 {
-	gaas::lineshapeSim::simHandler sh = gaas::lineshapeSim::simHandler("/home/gputestbed/Desktop/WMS_Processing_V2_ARPAE/gaas/H2Oh2oTest", "/home/gputestbed/Desktop/WMS_Processing_V2_ARPAE/gaas/H2O_tips.csv");
-	std::cout << "map1: "<<sh.molMassMap["H2O1"];
+	gaas::lineshapeSim::simHandler sh = gaas::lineshapeSim::simHandler("gaas/H2Oh2oTest", "/gaas/H2O_tips.csv");
 	int wavenumRes = (6000-100)*1000;
 	float* wavenums = new float[wavenumRes];
 	float* spec = new float[wavenumRes];

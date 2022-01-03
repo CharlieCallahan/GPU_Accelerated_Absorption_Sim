@@ -50,7 +50,7 @@ def saveAbsorptionDB(moleculeID, isotopologueNum, filename, minWavenum, maxWaven
     :return: void
     """
 
-    ssl._create_default_https_context = ssl._create_unverified_context
+    ssl._create_default_https_context = ssl._create_unverified_context #This may not be necessary on every system
     hapi.db_begin(hapiLocation)
     if loadFromHITRAN:
         HITRAN_molecules = ['H2O', 'CO2', 'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3',
@@ -146,12 +146,3 @@ def runHAPI(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, mol
     t2 = time.time()
     print("HAPI Time elapsed: ", (t2 - t1))
     return (nus, coefs)
-
-#gaasInit(2000,4000,'CO2',"/home/gputestbed/Desktop/gaas_linux/gaasDir/",'HTData',"test",loadFromHITRAN=True)
-# for i in range(300,1000,100):
-# print("running HAPI")
-# outHapi = runHAPI(300,1,.1,(1500-1000)*1000,1000,1500, "H2O")
-# plt.plot(outHapi[0],outHapi[1])
-#out = gaasRunF64(4100, 1,.1,(900-800)*500,800,900,"/home/gputestbed/Desktop/WMS_Processing_V2_ARPAE/gaas/","H2O",1,"h2oTest")
-#plt.plot(out[1], out[0])
-#plt.show()
