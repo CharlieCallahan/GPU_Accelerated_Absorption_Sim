@@ -31,25 +31,18 @@ To build and install the python library refer to section 1.0 for Linux and 1.1 f
 	pyInterface/build/lib.linux... into the venv/lib/python3.7/site-packages folder to use it from the IDE. 
 
 1.1: Windows python module build+install guide:
-	open up an x64 Native Tools Command Prompt (if you dont have this, you need to download microsoft visual studio build tools)
+	
+Optional:
+	if you need to rebuild the dynamic library ( GAAS.dll and GAAS.lib ):
+	Download Microsoft Visual Studio 2017-2019 (these are the only versions compatible with CUDA).
+	Open an x64 Native Tools Command Prompt for Visual Studio 2019
+	run compileDLL.bat from the command line
+
+Building and Installing Python module:
+	open up an x64 Native Tools Command Prompt (if you dont have this, you need to download Microsoft Visual Studio build tools)
 	go to pyInterface folder
 	python3 setup.py build
 	python3 setup.py install --user
-	
-	if you need to rebuild the dynamic library ( GAAS.dll and GAAS.lib ):
-	Download Microsoft Visual Studio.
-	Create a new project and choose Cuda Runtime for project type.
-	Name it GAAS
-	Delete the project default file: kernel.cu
-	In the solution explorer, right click GAAS and select Add->Existing Item... and add all of the files in src and include (from the git repo) to the project.	
-	Then in the solution explorer, right click GAAS and select Properties and set the configuration to your current configuration.
-	Under Properties->Configuration Properties->General, change Configuration Type to Dynamic Library (.dll)
-	Under Properties->CUDA C/C++->Device, set the Code Generation Setting to one matching your GPU compute capability (ex. for compute capability 7.5, set the argument to "compute_75,sm_75")
-	Under Properties->C/C++->General add the directory path to the include folder from the git repo to Additional Include Directories
-	Under Properties->C/C++->PreProcessor add GAAS_EXPORT to the list of preprocessor definitions 
-	Exit the properties tab, Right click on GAAS in the solution explorer and click build.
-	Once its finished building, right click GAAS in the solution explorer and and select "Open folder in file explorer"
-	Copy GAAS.dll and GAAS.lib to the git repo into the pyInterface folder (overwrite the existing files)
 	
 2.1: Supported GPU architectures:
 	compute_35,sm_35
