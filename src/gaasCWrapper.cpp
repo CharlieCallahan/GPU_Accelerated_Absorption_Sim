@@ -17,8 +17,9 @@ gaas::lineshapeSim::simHandler sh = gaas::lineshapeSim::simHandler(gaasDir_s+mol
 
 double molarMass=sh.molMassMap[moleculeID_s+isoNum_s]; 
 double isotopeAbundance=sh.isoAbundanceMap[moleculeID_s+isoNum_s];
+#ifndef SILENT
 std::cout << "molarMass: " << molarMass << " iso Abundance: "<< isotopeAbundance <<"\n";
-
+#endif
 sh.runFloat(tempK,pressureAtm,conc, spectrumTarget, wavenumsTarget, wavenumRes, startWavenum, endWavenum, molarMass, isotopeAbundance);
 
 }
@@ -34,8 +35,9 @@ gaas::lineshapeSim::simHandler sh = gaas::lineshapeSim::simHandler(gaasDir_s+mol
 
 double molarMass=sh.molMassMap[moleculeID_s+isoNum_s]; 
 double isotopeAbundance=sh.isoAbundanceMap[moleculeID_s+isoNum_s];
+#ifndef SILENT
 std::cout << "molarMass: " << molarMass << " iso Abundance: "<< isotopeAbundance <<"\n";
-
+#endif
 sh.runDouble(tempK,pressureAtm,conc, spectrumTarget, wavenumsTarget, wavenumRes, startWavenum, endWavenum, molarMass, isotopeAbundance);
 
 }

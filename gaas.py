@@ -6,7 +6,11 @@ import matplotlib.pyplot as plt
 import time
 import tipsDB.genTIPSFile as gt
 from os import listdir
+import numpy as np
 
+#adds this range of wavenumbers to the GAAS simulation then pares it back so that features at the extremes of the wavenumber
+#are accurate 
+WAVENUMBUFFER = 10
 
 def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory, HITRANParDirectory, id, loadFromHITRAN=False):
     """
@@ -24,7 +28,8 @@ def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory
     isotopologues on HITRAN
     :return: void
     """
-    saveAbsorptionDB(moleculeID, isotopologueID, gaasDirectory+moleculeID+"_iso_"+str(isotopologueID)+"_"+id, startWavenum, endWavenum, HITRANParDirectory, loadFromHITRAN=loadFromHITRAN)
+    
+    saveAbsorptionDB(moleculeID, isotopologueID, gaasDirectory+moleculeID+"_iso_"+str(isotopologueID)+"_"+id, max(startWavenum-WAVENUMBUFFER,0),max(endWavenum+WAVENUMBUFFER,0), HITRANParDirectory, loadFromHITRAN=loadFromHITRAN)
 
     # check for TIPS file in gaasDirectory.
     tipsFilename = moleculeID + "_iso_" + str(isotopologueID) + "_tips.csv"
@@ -49,6 +54,8 @@ def saveAbsorptionDB(moleculeID, isotopologueNum, filename, minWavenum, maxWaven
     :param loadFromHITRAN: True= dowload data from HITRAN or False= Use current HITRAN database file in hapiLocation,
     :return: void
     """
+    minWavenumAdj = max(minWavenum-WAVENUMBUFFER,0)
+    maxWavenumAdj = max(maxWavenum+WAVENUMBUFFER,0)
 
     ssl._create_default_https_context = ssl._create_unverified_context #This may not be necessary on every system
     hapi.db_begin(hapiLocation)
@@ -57,13 +64,14 @@ def saveAbsorptionDB(moleculeID, isotopologueNum, filename, minWavenum, maxWaven
                             'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl', 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2','NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
         molecule_number = (HITRAN_molecules.index(moleculeID)) + 1
         hapi.fetch(moleculeID, molecule_number,
-                   isotopologueNum, minWavenum-1, maxWavenum+1)
+                   isotopologueNum, minWavenumAdj-1, maxWavenumAdj+1)
 
     hapi.describeTable(moleculeID)
     nu, n_air,gamma_air,gamma_self,sw,elower,deltaAir = hapi.getColumns(moleculeID,['nu','n_air','gamma_air','gamma_self','sw','elower','delta_air'])
     absParamData = []
+
     for i in range(len(nu)):
-        if (sw[i] >= strengthCutoff and nu[i] >= minWavenum and nu[i] <= maxWavenum):
+        if (sw[i] >= strengthCutoff and nu[i] >= minWavenumAdj and nu[i] <= maxWavenumAdj):
             absParamData.append(nu[i])
             absParamData.append(n_air[i])
             absParamData.append(gamma_air[i])
@@ -95,8 +103,14 @@ def gaasRunF32(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, 
     :return: (spectrum : list, wavenums : list)
     """
     # ARGS: (double tempK, double pressureAtm, double conc, int wavenumRes, double startWavenum, double endWavenum, char * gaasDir, char * moleculeID, char * runID)
-    output = gaasAPI.runSimF32(tempK, pressureAtm,conc,int(wavenumRes),startWavenum,endWavenum,gaasDir,moleculeID,int(isotopologueID),runID)
-    return output
+    startWavenumAdj = max(startWavenum-WAVENUMBUFFER,0)
+    endWavenumAdj = max(endWavenum+WAVENUMBUFFER,0)
+    resAdj =int( wavenumRes*(endWavenumAdj-startWavenumAdj)/(endWavenum-startWavenum))
+
+    nus,coefs = gaasAPI.runSimF32(tempK, pressureAtm,conc,int(resAdj),startWavenumAdj,endWavenumAdj,gaasDir,moleculeID,int(isotopologueID),runID)
+    startPos = int(resAdj*WAVENUMBUFFER/(endWavenumAdj-startWavenumAdj))
+    endPos = int(startPos+wavenumRes)
+    return ( nus[startPos:endPos],coefs[startPos:endPos] )
 
 def gaasRunF64(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, gaasDir, moleculeID, isotopologueID, runID):
     """
@@ -114,8 +128,15 @@ def gaasRunF64(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, 
     :return: (spectrum : list, wavenums : list)
     """
     # ARGS: (double tempK, double pressureAtm, double conc, int wavenumRes, double startWavenum, double endWavenum, char * gaasDir, char * moleculeID, char * runID)
-    output = gaasAPI.runSimF64(tempK, pressureAtm,conc,int(wavenumRes),startWavenum,endWavenum,gaasDir,moleculeID,int(isotopologueID),runID)
-    return output
+    startWavenumAdj = max(startWavenum-WAVENUMBUFFER,0)
+    endWavenumAdj = max(endWavenum+WAVENUMBUFFER,0)
+    resAdj =int( wavenumRes*(endWavenumAdj-startWavenumAdj)/(endWavenum-startWavenum))
+
+    nus,coefs = gaasAPI.runSimF64(tempK, pressureAtm,conc,int(resAdj),startWavenumAdj,endWavenumAdj,gaasDir,moleculeID,int(isotopologueID),runID)
+    startPos = int(resAdj*WAVENUMBUFFER/(endWavenumAdj-startWavenumAdj))
+    endPos = int(startPos+wavenumRes)
+    return ( nus[startPos:endPos],coefs[startPos:endPos] )
+    
 
 def runHAPI(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, moleculeID, isotopologueID, hapiDB):
     """
@@ -135,6 +156,7 @@ def runHAPI(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, mol
                         'NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
     molecule_number = (HITRAN_molecules.index(moleculeID)) + 1
     wavenumStep = (endWavenum - startWavenum)/wavenumRes
+    
     t1 = time.time()
     nus, coefs = hapi.absorptionCoefficient_Voigt(Components=[(molecule_number, isotopologueID, conc)],
                                                   SourceTables=moleculeID,
@@ -143,6 +165,7 @@ def runHAPI(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, mol
                                                   Diluent={'self': conc,
                                                            'air': 1 - conc},
                                                   WavenumberStep=wavenumStep, HITRAN_units=False)
+
     t2 = time.time()
     print("HAPI Time elapsed: ", (t2 - t1))
     return (nus, coefs)

@@ -1,5 +1,5 @@
 //  Created by Charles callahan on 9/25/21.
-//  Copyright © 2021 Charles callahan. All rights reserved.
+//  Copyright ï¿½ 2021 Charles callahan. All rights reserved.
 #include "Gaas.cuh"
 
 
@@ -1332,7 +1332,7 @@ void gaas::lineshapeSim::simHandler::runFloat(double tempK, double pressureAtm, 
 
 	int numberFeatures = lastFeature - firstFeature; //number of features = total number of cuda threads
 	int padding = numberFeatures % cudaThreadsPerBlock; //added so that kernel can run an integer # of cuda blocks
-	
+														//feature database has padding added in when it is loaded, so the data is initialized
 	//set device
 	cudaError_t cudaStatus;
 	cudaStatus = cudaSetDevice(this->cudaDevice);
@@ -1377,17 +1377,20 @@ void gaas::lineshapeSim::simHandler::runFloat(double tempK, double pressureAtm, 
 	sw.start();
 	//start gpu kernel																					(float* wavenums, featureData* database, float* output, double tempK, double pressAtm, double conc, double tipsRef, double tipsTemp, double startWavenum, double wavenumStep, int wavenumCount, double molarMass, double isotopeAbundance, int threadsPerBlock)
 	int numBlocks = int( (numberFeatures+padding) / cudaThreadsPerBlock);
-		
+	#ifndef SILENT
 	std::cout << "# Blocks: " << numBlocks << "\n";
-	
+	#endif
 	gaas::lineshapeSim::lineshapeFloat <<<numBlocks, cudaThreadsPerBlock>>> (dWavenums, dFeatDatabase, dSpecTarget, tempK, pressureAtm, conc, tipsRef, tipsTemp, startWavenum, wavenumStep, wavenumRes, molarMass, isotopeAbundance, this->cudaThreadsPerBlock);
 	
 	
 	cudaStatus = cudaDeviceSynchronize();
 	double dt = sw.stop_time();
 	gaas::checkCudaErrors(cudaStatus, "Device syc error");
+
+	#ifndef SILENT
 	std::cout << "Time elapsed: " << dt<<"\n";
 	std::cout << "Features Simulated per second: " << double(numberFeatures) / dt << "\n";
+	#endif
 
 	//copy results back to host
 	cudaStatus = cudaMemcpy(spectrumTarget, dSpecTarget, wavenumRes * sizeof(float), cudaMemcpyDeviceToHost);
@@ -1493,15 +1496,18 @@ void gaas::lineshapeSim::simHandler::runDouble(double tempK, double pressureAtm,
 	sw.start();
 	//start gpu kernel																					(float* wavenums, featureData* database, float* output, double tempK, double pressAtm, double conc, double tipsRef, double tipsTemp, double startWavenum, double wavenumStep, int wavenumCount, double molarMass, double isotopeAbundance, int threadsPerBlock)
 	int numBlocks = int( (numberFeatures+padding) / cudaThreadsPerBlock);
+	#ifndef SILENT
 	std::cout << "# Blocks: " << numBlocks << "\n";
+	#endif
 	gaas::lineshapeSim::lineshapeDouble <<<numBlocks, cudaThreadsPerBlock>>> (dWavenums, dFeatDatabase, dSpecTarget, tempK, pressureAtm, conc, tipsRef, tipsTemp, startWavenum, wavenumStep, wavenumRes, molarMass, isotopeAbundance, this->cudaThreadsPerBlock);
 	
 	cudaStatus = cudaDeviceSynchronize();
 	double dt = sw.stop_time();
 	gaas::checkCudaErrors(cudaStatus, "Device syc error");
+	#ifndef SILENT
 	std::cout << "Time elapsed: " << dt<<"\n";
 	std::cout << "Features Simulated per second: " << double(numberFeatures) / dt << "\n";
-
+	#endif
 	//copy results back to host
 	cudaStatus = cudaMemcpy(spectrumTarget, dSpecTarget, wavenumRes * sizeof(double), cudaMemcpyDeviceToHost);
 	gaas::checkCudaErrors(cudaStatus, "cudaMemCpy Failure");
