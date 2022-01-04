@@ -49,7 +49,7 @@ if windows:
           ext_modules = [Extension('gaasAPI', 
                      sources = ['gaasPy.c'], 
                      include_dirs = [],#[rootDir+"/include"],
-                     extra_compile_args= ["/I"+rootDir+"/include"],
+                     extra_compile_args= ["/I"+rootDir+"/include","/DWIN64"],
                      extra_link_args=[cudaLibPath+"cudart.lib",cudaLibPath+"cuda.lib", cwd+"//GAAS.lib", "/DLL"], #"/LIBPATH:"+rootDir,"GAAS.lib" "/NODEFAULTLIB:MSVCRT"
                      extra_objects=[cwd+"//GAAS.lib"], #rootDir+"\GAAS.lib"
                      library_dirs=[cwd]

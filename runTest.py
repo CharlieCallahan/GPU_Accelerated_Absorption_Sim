@@ -28,7 +28,7 @@ gs.gaasInit(startWavenum,endWavenum,mol,iso,gaasDirPath,'HTData',"test",loadFrom
                            #(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, moleculeID)
 nus_h,coefs_h = gs.runHAPI(T, P, conc, (endWavenum - startWavenum)/wavenumRes, startWavenum, endWavenum, mol, iso,'HTData')
 
-nus, coefs = gs.gaasRunF32(T, P,conc,(endWavenum - startWavenum)/wavenumRes,startWavenum,endWavenum,gaasDirPath,mol,iso,"test")
+nus, coefs = gs.gaasRunF64(T, P,conc,(endWavenum - startWavenum)/wavenumRes,startWavenum,endWavenum,gaasDirPath,mol,iso,"test")
 
 plt.plot(nus,coefs)
 plt.plot(nus_h,coefs_h)
