@@ -1,3 +1,25 @@
+# Copyright (c) 2021 Charlie Callahan
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+
+
 import hapi
 import ssl
 import struct
@@ -150,14 +172,13 @@ def runHAPI(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, mol
     :param moleculeID:
     :return: (spectrum, wavenums)
     """
-    hapi.db_begin(hapiDB)
+    #hapi.db_begin(hapiDB)
     HITRAN_molecules = ['H2O', 'CO2', 'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3',
                         'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl'                        , 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2',
                         'NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
     molecule_number = (HITRAN_molecules.index(moleculeID)) + 1
     wavenumStep = (endWavenum - startWavenum)/wavenumRes
     
-    t1 = time.time()
     nus, coefs = hapi.absorptionCoefficient_Voigt(Components=[(molecule_number, isotopologueID, conc)],
                                                   SourceTables=moleculeID,
                                                   Environment={
@@ -166,6 +187,4 @@ def runHAPI(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, mol
                                                            'air': 1 - conc},
                                                   WavenumberStep=wavenumStep, HITRAN_units=False)
 
-    t2 = time.time()
-    print("HAPI Time elapsed: ", (t2 - t1))
     return (nus, coefs)
