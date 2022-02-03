@@ -25,11 +25,11 @@
 #include <stdio.h>
 
 static PyObject* runSimF32(PyObject* self, PyObject* args){
-//ARGS: (double tempK, double pressureAtm, double conc, int wavenumRes, double startWavenum, double endWavenum, char* gaasDir, char* moleculeID, char* runID)
+//ARGS: (double tempK, double pressureAtm, double conc, double wavenumStep, double startWavenum, double endWavenum, char* gaasDir, char* moleculeID, char* runID)
 	double tempK;
 	double pressureAtm;
 	double conc;
-	int wavenumRes;
+	double wavenumStep;
 	double startWavenum;
 	double endWavenum;
 	char* gaasDir;
@@ -38,28 +38,25 @@ static PyObject* runSimF32(PyObject* self, PyObject* args){
 	char* runID;
 	
 	
-	if (!PyArg_ParseTuple(args, "dddiddssis", &tempK, &pressureAtm, &conc, &wavenumRes, &startWavenum, &endWavenum, &gaasDir, &moleculeID, &isoNum, &runID)){
+	if (!PyArg_ParseTuple(args, "ddddddssis", &tempK, &pressureAtm, &conc, &wavenumStep, &startWavenum, &endWavenum, &gaasDir, &moleculeID, &isoNum, &runID)){
 		return NULL;
 	}
+	int numWavenums = (int)((endWavenum-startWavenum)/wavenumStep);
+	float* spectrumTarget = (float*)malloc(numWavenums*sizeof(float));//new float [wavenumRes];
+	double* wavenumsTarget = (double*)malloc(numWavenums*sizeof(double));
+
+	runSimFloat(tempK, pressureAtm, conc, spectrumTarget, wavenumsTarget, wavenumStep, startWavenum, endWavenum, gaasDir, moleculeID, isoNum, runID);
 	
-	//float* spectrumTarget = new float [wavenumRes];
-	//float* wavenumsTarget = new float [wavenumRes];
-	
-	float* spectrumTarget = (float*)malloc(wavenumRes*sizeof(float));//new float [wavenumRes];
-	float* wavenumsTarget = (float*)malloc(wavenumRes*sizeof(float));
-	
-	runSimFloat(tempK, pressureAtm, conc, spectrumTarget, wavenumsTarget, wavenumRes, startWavenum, endWavenum, gaasDir, moleculeID, isoNum, runID);
-	
-	PyObject* spectrumList = PyList_New(wavenumRes);
-	PyObject* wavenumsList = PyList_New(wavenumRes);
+	PyObject* spectrumList = PyList_New(numWavenums);
+	PyObject* wavenumsList = PyList_New(numWavenums);
 	PyObject* tempVal;
-	
-	for(int i = 0; i < wavenumRes; i++){
+
+	for(int i = 0; i < numWavenums; i++){
 	//add results to py lists for output
 	tempVal = Py_BuildValue("f",spectrumTarget[i]);
 	PyList_SetItem(spectrumList, i, tempVal);
 	
-	tempVal = Py_BuildValue("f",wavenumsTarget[i]);
+	tempVal = Py_BuildValue("d",wavenumsTarget[i]);
 	PyList_SetItem(wavenumsList, i, tempVal);
 	}
 	
@@ -76,11 +73,11 @@ static PyObject* runSimF32(PyObject* self, PyObject* args){
 
 //runs simulation with double point precision, requires cuda architecture > 6.0
 static PyObject* runSimF64(PyObject* self, PyObject* args){
-//ARGS: (double tempK, double pressureAtm, double conc, int wavenumRes, double startWavenum, double endWavenum, char* gaasDir, char* moleculeID, char* runID)
+//ARGS: (double tempK, double pressureAtm, double conc, double wavenumStep, double startWavenum, double endWavenum, char* gaasDir, char* moleculeID, char* runID)
 	double tempK;
 	double pressureAtm;
 	double conc;
-	int wavenumRes; //number of wavenumbers to put into wavenum grid
+	double wavenumStep; //number of wavenumbers to put into wavenum grid
 	double startWavenum;
 	double endWavenum;
 	char* gaasDir;
@@ -89,20 +86,20 @@ static PyObject* runSimF64(PyObject* self, PyObject* args){
 	char* runID;
 	
 	
-	if (!PyArg_ParseTuple(args, "dddiddssis", &tempK, &pressureAtm, &conc, &wavenumRes, &startWavenum, &endWavenum, &gaasDir, &moleculeID, &isoNum, &runID)){
+	if (!PyArg_ParseTuple(args, "ddddddssis", &tempK, &pressureAtm, &conc, &wavenumStep, &startWavenum, &endWavenum, &gaasDir, &moleculeID, &isoNum, &runID)){
 		return NULL;
 	}
-		
-	double* spectrumTarget = (double*)malloc(wavenumRes*sizeof(double));//new float [wavenumRes];
-	double* wavenumsTarget = (double*)malloc(wavenumRes*sizeof(double));
+	int numWavenums = (int)((endWavenum-startWavenum)/wavenumStep);
+	double* spectrumTarget = (double*)malloc(numWavenums*sizeof(double));//new float [wavenumRes];
+	double* wavenumsTarget = (double*)malloc(numWavenums*sizeof(double));
 	
-	runSimDouble(tempK, pressureAtm, conc, spectrumTarget, wavenumsTarget, wavenumRes, startWavenum, endWavenum, gaasDir, moleculeID, isoNum, runID);
+	runSimDouble(tempK, pressureAtm, conc, spectrumTarget, wavenumsTarget, wavenumStep, startWavenum, endWavenum, gaasDir, moleculeID, isoNum, runID);
 	
-	PyObject* spectrumList = PyList_New(wavenumRes);
-	PyObject* wavenumsList = PyList_New(wavenumRes);
+	PyObject* spectrumList = PyList_New(numWavenums);
+	PyObject* wavenumsList = PyList_New(numWavenums);
 	PyObject* tempVal;
 	
-	for(int i = 0; i < wavenumRes; i++){
+	for(int i = 0; i < numWavenums; i++){
 		//add results to py lists for output
 		tempVal = Py_BuildValue("d",spectrumTarget[i]);
 		PyList_SetItem(spectrumList, i, tempVal);

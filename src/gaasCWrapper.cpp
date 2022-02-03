@@ -28,7 +28,7 @@ extern "C" {
 
 #include "gaasCWrapper.h"
 
-/*extern "C"*/ void runSimFloat(double tempK, double pressureAtm, double conc, float* spectrumTarget, float* wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum, char* gaasDir, char* moleculeID, int isoNum, char* runID){
+/*extern "C"*/ void runSimFloat(double tempK, double pressureAtm, double conc, float* spectrumTarget, double* wavenumsTarget, double wavenumStep, double startWavenum, double endWavenum, char* gaasDir, char* moleculeID, int isoNum, char* runID){
 
 std::string gaasDir_s = std::string(gaasDir);
 std::string moleculeID_s = std::string(moleculeID);
@@ -42,11 +42,11 @@ double isotopeAbundance=sh.isoAbundanceMap[moleculeID_s+isoNum_s];
 #ifndef SILENT
 std::cout << "molarMass: " << molarMass << " iso Abundance: "<< isotopeAbundance <<"\n";
 #endif
-sh.runFloat(tempK,pressureAtm,conc, spectrumTarget, wavenumsTarget, wavenumRes, startWavenum, endWavenum, molarMass, isotopeAbundance);
+sh.runFloat(tempK,pressureAtm,conc, spectrumTarget, wavenumsTarget, wavenumStep, startWavenum, endWavenum, molarMass, isotopeAbundance);
 
 }
 
-/*extern "C"*/ void runSimDouble(double tempK, double pressureAtm, double conc, double* spectrumTarget, double* wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum, char* gaasDir, char* moleculeID, int isoNum, char* runID){
+/*extern "C"*/ void runSimDouble(double tempK, double pressureAtm, double conc, double* spectrumTarget, double* wavenumsTarget, double wavenumStep, double startWavenum, double endWavenum, char* gaasDir, char* moleculeID, int isoNum, char* runID){
 
 std::string gaasDir_s = std::string(gaasDir);
 std::string moleculeID_s = std::string(moleculeID);
@@ -60,7 +60,7 @@ double isotopeAbundance=sh.isoAbundanceMap[moleculeID_s+isoNum_s];
 #ifndef SILENT
 std::cout << "molarMass: " << molarMass << " iso Abundance: "<< isotopeAbundance <<"\n";
 #endif
-sh.runDouble(tempK,pressureAtm,conc, spectrumTarget, wavenumsTarget, wavenumRes, startWavenum, endWavenum, molarMass, isotopeAbundance);
+sh.runDouble(tempK,pressureAtm,conc, spectrumTarget, wavenumsTarget, wavenumStep, startWavenum, endWavenum, molarMass, isotopeAbundance);
 
 }
 

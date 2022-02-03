@@ -32,7 +32,7 @@ import numpy as np
 
 #adds this range of wavenumbers to the GAAS simulation then pares it back so that features at the extremes of the wavenumber
 #are accurate 
-WAVENUMBUFFER = 10
+WAVENUMBUFFER = 20
 
 def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory, HITRANParDirectory, id, loadFromHITRAN=False):
     """
@@ -108,7 +108,7 @@ def saveAbsorptionDB(moleculeID, isotopologueNum, filename, minWavenum, maxWaven
         filehandler.write(bytearray(struct.pack("<d", absParamData[i])))
 
 
-def gaasRunF32(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, gaasDir, moleculeID, isotopologueID, runID):
+def gaasRunF32(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, gaasDir, moleculeID, isotopologueID, runID):
     """
     runs simulation on GPU with 32 bit float precision
     suitable for older GPUs without support for atomicAdd(double *, double)  (Cuda architecture < 6.0 )
@@ -116,7 +116,7 @@ def gaasRunF32(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, 
     :param tempK:
     :param pressureAtm:
     :param conc:
-    :param wavenumRes: number of wavenumbers to simulate over range, lower resolution = faster
+    :param wavenumStep: wavenumbers between each simulation sample, higher wavenumStep = faster
     :param startWavenum: first wavenumber to simulate
     :param endWavenum: last wavenumber to simulate
     :param gaasDir: gaas directory specified in gaasInit
@@ -124,24 +124,22 @@ def gaasRunF32(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, 
     :param runID: Use multiple run ids if you want to run different simulations at the same time (ie with different molecules or wavenumber ranges)
     :return: (spectrum : list, wavenums : list)
     """
-    # ARGS: (double tempK, double pressureAtm, double conc, int wavenumRes, double startWavenum, double endWavenum, char * gaasDir, char * moleculeID, char * runID)
+    # ARGS: (double tempK, double pressureAtm, double conc, double wavenumStep, double startWavenum, double endWavenum, char * gaasDir, char * moleculeID, char * runID)
     startWavenumAdj = max(startWavenum-WAVENUMBUFFER,0)
     endWavenumAdj = max(endWavenum+WAVENUMBUFFER,0)
-    resAdj =int( wavenumRes*(endWavenumAdj-startWavenumAdj)/(endWavenum-startWavenum))
 
-    nus,coefs = gaasAPI.runSimF32(tempK, pressureAtm,conc,int(resAdj),startWavenumAdj,endWavenumAdj,gaasDir,moleculeID,int(isotopologueID),runID)
-    startPos = int(resAdj*WAVENUMBUFFER/(endWavenumAdj-startWavenumAdj))
-    endPos = int(startPos+wavenumRes)
-    return ( nus[startPos:endPos],coefs[startPos:endPos] )
+    nus,coefs = gaasAPI.runSimF32(tempK, pressureAtm,conc,wavenumStep,startWavenumAdj,endWavenumAdj,gaasDir,moleculeID,int(isotopologueID),runID)
+    buff = int(WAVENUMBUFFER/wavenumStep)
+    return ( nus[buff:len(nus)-buff],coefs[buff:len(coefs)-buff])
 
-def gaasRunF64(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, gaasDir, moleculeID, isotopologueID, runID):
+def gaasRunF64(tempK, pressureAtm, conc, wavenumStep, startWavenum, endWavenum, gaasDir, moleculeID, isotopologueID, runID):
     """
     runs simulation on GPU with 64 bit double precision
     requires Cuda architecture >= 6.0
     :param tempK:
     :param pressureAtm:
     :param conc:
-    :param wavenumRes: number of wavenumbers to simulate over range, lower resolution = faster
+    :param wavenumStep: wavenumbers between each simulation sample, higher wavenumStep = faster
     :param startWavenum: first wavenumber to simulate
     :param endWavenum: last wavenumber to simulate
     :param gaasDir: gaas directory specified in gaasInit
@@ -149,24 +147,23 @@ def gaasRunF64(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, 
     :param runID: Use multiple run ids if you want to run different simulations at the same time (ie with different molecules or wavenumber ranges)
     :return: (spectrum : list, wavenums : list)
     """
-    # ARGS: (double tempK, double pressureAtm, double conc, int wavenumRes, double startWavenum, double endWavenum, char * gaasDir, char * moleculeID, char * runID)
+    # ARGS: (double tempK, double pressureAtm, double conc, double wavenumStep, double startWavenum, double endWavenum, char * gaasDir, char * moleculeID, char * runID)
     startWavenumAdj = max(startWavenum-WAVENUMBUFFER,0)
     endWavenumAdj = max(endWavenum+WAVENUMBUFFER,0)
-    resAdj =int( wavenumRes*(endWavenumAdj-startWavenumAdj)/(endWavenum-startWavenum))
 
-    nus,coefs = gaasAPI.runSimF64(tempK, pressureAtm,conc,int(resAdj),startWavenumAdj,endWavenumAdj,gaasDir,moleculeID,int(isotopologueID),runID)
-    startPos = int(resAdj*WAVENUMBUFFER/(endWavenumAdj-startWavenumAdj))
-    endPos = int(startPos+wavenumRes)
-    return ( nus[startPos:endPos],coefs[startPos:endPos] )
+    nus,coefs = gaasAPI.runSimF64(tempK, pressureAtm,conc,wavenumStep,startWavenumAdj,endWavenumAdj,gaasDir,moleculeID,int(isotopologueID),runID)
+
+    buff = int(WAVENUMBUFFER/wavenumStep)
+    return ( nus[buff:len(nus)-buff],coefs[buff:len(coefs)-buff])
     
 
-def runHAPI(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, moleculeID, isotopologueID, hapiDB):
+def runHAPI(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, moleculeID, isotopologueID, hapiDB):
     """
     Runs simulation using HAPI python library, for performace testing baseline
     :param tempK:
     :param pressureAtm:
     :param conc:
-    :param wavenumRes:
+    :param wavenumStep:
     :param startWavenum:
     :param endWavenum:
     :param moleculeID:
@@ -177,14 +174,14 @@ def runHAPI(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, mol
                         'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl'                        , 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2',
                         'NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
     molecule_number = (HITRAN_molecules.index(moleculeID)) + 1
-    wavenumStep = (endWavenum - startWavenum)/wavenumRes
     
     nus, coefs = hapi.absorptionCoefficient_Voigt(Components=[(molecule_number, isotopologueID, conc)],
                                                   SourceTables=moleculeID,
                                                   Environment={
                                                       'p': pressureAtm, 'T': tempK},
                                                   Diluent={'self': conc,
-                                                           'air': 1 - conc},
+                                                           'air': 1 - conc}, 
+                                                  WavenumberRange=(startWavenum,endWavenum),
                                                   WavenumberStep=wavenumStep, HITRAN_units=False)
 
     return (nus, coefs)

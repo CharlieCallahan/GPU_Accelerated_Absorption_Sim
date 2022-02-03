@@ -26,13 +26,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 
-startWavenum = 1300
-endWavenum = 2250
+startWavenum = 1000
+endWavenum = 10000
 wavenumRes = 0.001 #wavenums per simulation step
-mol = 'H2O' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
+mol = 'HNO3' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
 iso = 1 #isotopologue num
-T = 2500 #K
-P = 1.0 #atm
+T = 600 #K
+P = 5.0 #atm
 conc = 0.05
 #pathlength is assumed to be 100cm, if you want to use a different pathlenth, scale the absorbance by pl_cm/100
 
@@ -46,9 +46,9 @@ if (not os.path.isdir(gaasDirPath)):
     #need to make gaas directory
     os.mkdir(gaasDirPath)
     
-#gs.gaasInit(startWavenum,endWavenum,mol,iso,gaasDirPath,"C:\\Users\\Charlie\\Desktop\\HITEMP_DELETE_THIS\\db","test",loadFromHITRAN=False)
+gs.gaasInit(startWavenum,endWavenum,mol,iso,gaasDirPath,"C://Users//Charlie//Desktop//GPU_Accelerated_Absorption_Sim//HTData","test",loadFromHITRAN=True)
                            #(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, moleculeID)
-#nus_h,coefs_h = gs.runHAPI(T, P, conc, (endWavenum - startWavenum)/wavenumRes, startWavenum, endWavenum, mol, iso,'HTData')
+nus_h,coefs_h = gs.runHAPI(T, P, conc, (endWavenum - startWavenum)/wavenumRes, startWavenum, endWavenum, mol, iso,'HTData')
 t1 = time.time()
 nus, coefs = gs.gaasRunF32(T, P,conc,(endWavenum - startWavenum)/wavenumRes,startWavenum,endWavenum,gaasDirPath,mol,iso,"test")
 print("sim time: ",time.time()-t1)
@@ -64,7 +64,7 @@ def getError(nus_h,coefs_h,nus_g,coefs_g):
 
 #print("Simulation error = ",getError(nus_h,coefs_h,nus,coefs)*100,"%")
 plt.plot(nus,coefs)
-plt.show()
+#plt.show()
 coefs_h_i = np.interp(nus,nus_h,coefs_h)
 plt.plot(nus,coefs_h_i)
 plt.plot(nus,coefs-coefs_h_i)

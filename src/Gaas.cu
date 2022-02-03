@@ -1331,23 +1331,21 @@ void gaas::lineshapeSim::simHandler::loadFeatDatabase(std::string databaseFilena
 }
 
 //float 32 run
-void gaas::lineshapeSim::simHandler::runFloat(double tempK, double pressureAtm, double conc, float * spectrumTarget, float * wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum, double molarMass, double isotopeAbundance)
+void gaas::lineshapeSim::simHandler::runFloat(double tempK, double pressureAtm, double conc, float * spectrumTarget, double * wavenumsTarget, double wavenumStep, double startWavenum, double endWavenum, double molarMass, double isotopeAbundance)
 {
-	//double molarMass = 18.01528;
-	//double isotopeAbundance = 0.997;
 
 	if (endWavenum <= startWavenum) {
-		std::cout << "ERROR: gaas::lineshapeSim::simHandler::run(double tempK, double pressureAtm, double conc, double * spectrumTarget, double * wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum)\n" 
+		std::cout << "ERROR: gaas::lineshapeSim::simHandler::runFloat(double tempK, double pressureAtm, double conc, float * spectrumTarget, double * wavenumsTarget, double wavenumStep, double startWavenum, double endWavenum, double molarMass, double isotopeAbundance)\n" 
 				  << "Invalid Wavenumber range ( " << startWavenum << ", " << endWavenum << " )\n";
 		exit(-1);
 	}
 
+	int numWavenums = int((endWavenum-startWavenum)/wavenumStep);
 	//generate array of wavenumbers
-	float wavenumStep = (endWavenum - startWavenum) / float(wavenumRes);
-	for (int i = 0; i < wavenumRes; i++) {
-		wavenumsTarget[i] = startWavenum + wavenumStep * float(i);
+	for (int i = 0; i < numWavenums; i++) {
+		wavenumsTarget[i] = startWavenum + wavenumStep * double(i);
 	}
-
+	
 	//find first feature in wavenumber range:
 	int firstFeature = -1;
 	for (int i = 0; i < this->absFeatCount; i++) {
@@ -1387,12 +1385,12 @@ void gaas::lineshapeSim::simHandler::runFloat(double tempK, double pressureAtm, 
 
 	//allocate device output
 	float* dSpecTarget; //device spectrum target
-	cudaStatus = cudaMalloc((void**)&dSpecTarget, wavenumRes * sizeof(float));
+	cudaStatus = cudaMalloc((void**)&dSpecTarget, numWavenums * sizeof(float));
 	gaas::checkCudaErrors(cudaStatus, "cudaMalloc Error");
 
 	//allocate device wavenum array
-	float* dWavenums;
-	cudaStatus = cudaMalloc((void**)&dWavenums, wavenumRes * sizeof(float));
+	double* dWavenums;
+	cudaStatus = cudaMalloc((void**)&dWavenums, numWavenums * sizeof(double));
 	gaas::checkCudaErrors(cudaStatus, "cudaMalloc Error");
 
 	//allocate device feature database
@@ -1400,16 +1398,16 @@ void gaas::lineshapeSim::simHandler::runFloat(double tempK, double pressureAtm, 
 	cudaStatus = cudaMalloc((void**)&dFeatDatabase, (numberFeatures+padding) * sizeof(featureData));
 	gaas::checkCudaErrors(cudaStatus, "cudaMalloc Error");
 
-	for (int i = 0; i < wavenumRes; i++) {
+	for (int i = 0; i < numWavenums; i++) {
 		spectrumTarget[i] = 0.0; //initialize spectrum to zero
 	}
 
 	//copy empty spectrum to device
-	cudaStatus = cudaMemcpy(dSpecTarget, spectrumTarget, wavenumRes * sizeof(float), cudaMemcpyHostToDevice);
+	cudaStatus = cudaMemcpy(dSpecTarget, spectrumTarget, numWavenums * sizeof(float), cudaMemcpyHostToDevice);
 	gaas::checkCudaErrors(cudaStatus, "cudaMemcpy Error");
 
 	//copy wavenums to device
-	cudaStatus = cudaMemcpy(dWavenums, wavenumsTarget, wavenumRes * sizeof(float), cudaMemcpyHostToDevice);
+	cudaStatus = cudaMemcpy(dWavenums, wavenumsTarget, numWavenums * sizeof(double), cudaMemcpyHostToDevice);
 	gaas::checkCudaErrors(cudaStatus, "cudaMemcpy Error");
 
 	//copy feature database to device	   //tell cuda to only copy the features that will be used.
@@ -1427,9 +1425,8 @@ void gaas::lineshapeSim::simHandler::runFloat(double tempK, double pressureAtm, 
 	#ifndef SILENT
 	std::cout << "# Blocks: " << numBlocks << "\n";
 	#endif
-	gaas::lineshapeSim::lineshapeFloat <<<numBlocks, cudaThreadsPerBlock>>> (dWavenums, dFeatDatabase, dSpecTarget, tempK, pressureAtm, conc, tipsRef, tipsTemp, startWavenum, wavenumStep, wavenumRes, molarMass, isotopeAbundance, this->cudaThreadsPerBlock);
-	
-	
+	gaas::lineshapeSim::lineshapeFloat <<<numBlocks, cudaThreadsPerBlock>>> (dWavenums, dFeatDatabase, dSpecTarget, tempK, pressureAtm, conc, tipsRef, tipsTemp, startWavenum, wavenumStep, numWavenums, molarMass, isotopeAbundance, this->cudaThreadsPerBlock);
+
 	cudaStatus = cudaDeviceSynchronize();
 	double dt = sw.stop_time();
 	gaas::checkCudaErrors(cudaStatus, "Device syc error");
@@ -1440,7 +1437,7 @@ void gaas::lineshapeSim::simHandler::runFloat(double tempK, double pressureAtm, 
 	#endif
 
 	//copy results back to host
-	cudaStatus = cudaMemcpy(spectrumTarget, dSpecTarget, wavenumRes * sizeof(float), cudaMemcpyDeviceToHost);
+	cudaStatus = cudaMemcpy(spectrumTarget, dSpecTarget, numWavenums * sizeof(float), cudaMemcpyDeviceToHost);
 	gaas::checkCudaErrors(cudaStatus, "cudaMemCpy Failure");
 	
 	cudaStatus = cudaFree(dWavenums);
@@ -1450,11 +1447,8 @@ void gaas::lineshapeSim::simHandler::runFloat(double tempK, double pressureAtm, 
 }
 
 //#if defined(__CUDA_ARCH__) && ( __CUDA_ARCH__ >= 600 ) //double atomic add required for this is only available in cuda arch > 6.0 gpus
-void gaas::lineshapeSim::simHandler::runDouble(double tempK, double pressureAtm, double conc, double* spectrumTarget, double* wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum, double molarMass, double isotopeAbundance){
+void gaas::lineshapeSim::simHandler::runDouble(double tempK, double pressureAtm, double conc, double* spectrumTarget, double* wavenumsTarget, double wavenumStep, double startWavenum, double endWavenum, double molarMass, double isotopeAbundance){
 	
-	//double molarMass = 18.01528; h2o
-	//double isotopeAbundance = 0.997;
-
 	if (endWavenum <= startWavenum) {
 		std::cout << "ERROR: gaas::lineshapeSim::simHandler::run(double tempK, double pressureAtm, double conc, double * spectrumTarget, double * wavenumsTarget, int wavenumRes, double startWavenum, double endWavenum)\n" 
 				  << "Invalid Wavenumber range ( " << startWavenum << ", " << endWavenum << " )\n";
@@ -1462,8 +1456,9 @@ void gaas::lineshapeSim::simHandler::runDouble(double tempK, double pressureAtm,
 	}
 
 	//generate array of wavenumbers
-	double wavenumStep = (endWavenum - startWavenum) / double(wavenumRes);
-	for (int i = 0; i < wavenumRes; i++) {
+	int numWavenums = int((endWavenum-startWavenum)/wavenumStep);
+
+	for (int i = 0; i < numWavenums; i++) {
 		wavenumsTarget[i] = startWavenum + wavenumStep * double(i);
 	}
 
@@ -1506,12 +1501,12 @@ void gaas::lineshapeSim::simHandler::runDouble(double tempK, double pressureAtm,
 
 	//allocate device output
 	double* dSpecTarget; //device spectrum target
-	cudaStatus = cudaMalloc((void**)&dSpecTarget, wavenumRes * sizeof(double));
+	cudaStatus = cudaMalloc((void**)&dSpecTarget, numWavenums * sizeof(double));
 	gaas::checkCudaErrors(cudaStatus, "cudaMalloc Error");
 
 	//allocate device wavenum array
 	double* dWavenums;
-	cudaStatus = cudaMalloc((void**)&dWavenums, wavenumRes * sizeof(double));
+	cudaStatus = cudaMalloc((void**)&dWavenums, numWavenums * sizeof(double));
 	gaas::checkCudaErrors(cudaStatus, "cudaMalloc Error");
 
 	//allocate device feature database
@@ -1519,16 +1514,16 @@ void gaas::lineshapeSim::simHandler::runDouble(double tempK, double pressureAtm,
 	cudaStatus = cudaMalloc((void**)&dFeatDatabase, (numberFeatures+padding) * sizeof(featureData));
 	gaas::checkCudaErrors(cudaStatus, "cudaMalloc Error");
 
-	for (int i = 0; i < wavenumRes; i++) {
+	for (int i = 0; i < numWavenums; i++) {
 		spectrumTarget[i] = 0.0; //initialize spectrum to zero
 	}
 
 	//copy empty spectrum to device
-	cudaStatus = cudaMemcpy(dSpecTarget, spectrumTarget, wavenumRes * sizeof(double), cudaMemcpyHostToDevice);
+	cudaStatus = cudaMemcpy(dSpecTarget, spectrumTarget, numWavenums * sizeof(double), cudaMemcpyHostToDevice);
 	gaas::checkCudaErrors(cudaStatus, "cudaMemcpy Error");
 
 	//copy wavenums to device
-	cudaStatus = cudaMemcpy(dWavenums, wavenumsTarget, wavenumRes * sizeof(double), cudaMemcpyHostToDevice);
+	cudaStatus = cudaMemcpy(dWavenums, wavenumsTarget, numWavenums * sizeof(double), cudaMemcpyHostToDevice);
 	gaas::checkCudaErrors(cudaStatus, "cudaMemcpy Error");
 
 	//copy feature database to device	   //tell cuda to only copy the features that will be used.
@@ -1546,7 +1541,7 @@ void gaas::lineshapeSim::simHandler::runDouble(double tempK, double pressureAtm,
 	#ifndef SILENT
 	std::cout << "# Blocks: " << numBlocks << "\n";
 	#endif
-	gaas::lineshapeSim::lineshapeDouble <<<numBlocks, cudaThreadsPerBlock>>> (dWavenums, dFeatDatabase, dSpecTarget, tempK, pressureAtm, conc, tipsRef, tipsTemp, startWavenum, wavenumStep, wavenumRes, molarMass, isotopeAbundance, this->cudaThreadsPerBlock);
+	gaas::lineshapeSim::lineshapeDouble <<<numBlocks, cudaThreadsPerBlock>>> (dWavenums, dFeatDatabase, dSpecTarget, tempK, pressureAtm, conc, tipsRef, tipsTemp, startWavenum, wavenumStep, numWavenums, molarMass, isotopeAbundance, this->cudaThreadsPerBlock);
 	
 	cudaStatus = cudaDeviceSynchronize();
 	double dt = sw.stop_time();
@@ -1556,7 +1551,7 @@ void gaas::lineshapeSim::simHandler::runDouble(double tempK, double pressureAtm,
 	std::cout << "Features Simulated per second: " << double(numberFeatures) / dt << "\n";
 	#endif
 	//copy results back to host
-	cudaStatus = cudaMemcpy(spectrumTarget, dSpecTarget, wavenumRes * sizeof(double), cudaMemcpyDeviceToHost);
+	cudaStatus = cudaMemcpy(spectrumTarget, dSpecTarget, numWavenums * sizeof(double), cudaMemcpyDeviceToHost);
 	gaas::checkCudaErrors(cudaStatus, "cudaMemCpy Failure");
 	
 	cudaStatus = cudaFree(dWavenums);
@@ -1597,7 +1592,7 @@ __device__ int gaas::lineshapeSim::toWavenumIndex(double startWavenum, double wa
 	return int((wavenumInput - startWavenum) / wavenumStep);
 }
 
-__global__ void gaas::lineshapeSim::lineshapeFloat(float* wavenums, featureData* database, float* output, double tempK, double pressAtm, double conc, double tipsRef, double tipsTemp, double startWavenum, double wavenumStep, int wavenumCount, double molarMass, double isotopeAbundance, int threadsPerBlock) {
+__global__ void gaas::lineshapeSim::lineshapeFloat(double* wavenums, featureData* database, float* output, double tempK, double pressAtm, double conc, double tipsRef, double tipsTemp, double startWavenum, double wavenumStep, int wavenumCount, double molarMass, double isotopeAbundance, int threadsPerBlock) {
 
 	int i = blockIdx.x*threadsPerBlock + threadIdx.x;
 	
@@ -1636,7 +1631,7 @@ __global__ void gaas::lineshapeSim::lineshapeFloat(float* wavenums, featureData*
 }
 
 __global__ void gaas::lineshapeSim::lineshapeDouble(double* wavenums, featureData* database, double* output, double tempK, double pressAtm, double conc, double tipsRef, double tipsTemp, double startWavenum, double wavenumStep, int wavenumCount, double molarMass, double isotopeAbundance, int threadsPerBlock){
-	#if defined(__CUDA_ARCH__) && ( __CUDA_ARCH__ >= 600 )
+	#if defined(__CUDA_ARCH__) && ( __CUDA_ARCH__ >= 600 ) //this function will do nothing if the architechture is too old
 	int i = blockIdx.x*threadsPerBlock + threadIdx.x;
 	
 	//compute voigt parameters:

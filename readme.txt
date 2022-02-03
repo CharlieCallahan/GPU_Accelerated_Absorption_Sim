@@ -4,7 +4,7 @@ make sure you have python3 installed
 
 install the latest nvidia drivers for your GPU https://www.nvidia.com/Download/index.aspx
 
-install microsoft visual studio build tools if you are using windows, this downloads the required windows c++ compiler
+install microsoft visual studio build tools (only versions 2017-2019 work!) if you are using windows, this downloads the required windows c++ compiler
 
 Then install the nvidia cuda toolkit at https://developer.nvidia.com/cuda-downloads
 
@@ -36,7 +36,7 @@ Optional:
 	if you need to rebuild the dynamic library ( GAAS.dll and GAAS.lib ):
 	Download Microsoft Visual Studio 2017-2019 (these are the only versions compatible with CUDA).
 	Open an x64 Native Tools Command Prompt for Visual Studio 2019
-	run compileDLL.bat from the command line
+	run compileDLL.bat from the command line (this builds GAAS.dll and GAAS.lib and copies them to the pyInterface folder)
 
 Building and Installing Python module:
 	open up an x64 Native Tools Command Prompt (if you dont have this, you need to download Microsoft Visual Studio build tools)
