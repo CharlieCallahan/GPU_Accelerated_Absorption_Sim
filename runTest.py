@@ -26,15 +26,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 
-startWavenum = 1000
-endWavenum = 10000
-wavenumRes = 0.001 #wavenums per simulation step
-mol = 'HNO3' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
+startWavenum = 10e6/1700
+endWavenum = 10e6/1500
+wavenumStep = 0.001 #wavenums per simulation step
+mol = 'CH4' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
 iso = 1 #isotopologue num
-T = 600 #K
-P = 5.0 #atm
+T = 300 #K
+P = 1.0 #atm
 conc = 0.05
-#pathlength is assumed to be 100cm, if you want to use a different pathlenth, scale the absorbance by pl_cm/100
+#pathlength is assumed to be 1cm, if you want to use a different pathlenth, scale the absorbance by pl_cm
 
 cwd = os.path.dirname(os.path.realpath(__file__))
 if sys.platform == 'win32' or sys.platform == 'win64':
@@ -46,28 +46,31 @@ if (not os.path.isdir(gaasDirPath)):
     #need to make gaas directory
     os.mkdir(gaasDirPath)
     
-gs.gaasInit(startWavenum,endWavenum,mol,iso,gaasDirPath,"C://Users//Charlie//Desktop//GPU_Accelerated_Absorption_Sim//HTData","test",loadFromHITRAN=True)
+gs.gaasInit(startWavenum,endWavenum,mol,iso,gaasDirPath,"C://Users//Charlie//Desktop//GPU_Accelerated_Absorption_Sim//HTData","test2",loadFromHITRAN=False)
                            #(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, moleculeID)
-nus_h,coefs_h = gs.runHAPI(T, P, conc, (endWavenum - startWavenum)/wavenumRes, startWavenum, endWavenum, mol, iso,'HTData')
+#nus_h,coefs_h = gs.runHAPI(T, P, conc, wavenumStep, startWavenum, endWavenum, mol, iso,'HTData')
 t1 = time.time()
-nus, coefs = gs.gaasRunF32(T, P,conc,(endWavenum - startWavenum)/wavenumRes,startWavenum,endWavenum,gaasDirPath,mol,iso,"test")
+nus, coefs = gs.gaasRunF32(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDirPath,mol,iso,"test2")
+plt.plot(nus,coefs)
+nus, coefs = gs.gaasRunF32(600, P,conc,wavenumStep,startWavenum,endWavenum,gaasDirPath,mol,iso,"test2")
+plt.plot(nus,coefs)
+plt.legend(("300K","600K"))
+plt.show()
 print("sim time: ",time.time()-t1)
+
 def getError(nus_h,coefs_h,nus_g,coefs_g):
-    coefs_h_i = np.interp(nus_g,nus_h,coefs_h)
     err = 0
     sum = 0
-    
-    for i in range(len(coefs_h_i)):
-        err+=abs(coefs_h_i[i]-coefs_g[i])
-        sum+=coefs_h_i[i]
+    for i in range(len(coefs_h)):
+        err+=abs(coefs_h[i]-coefs_g[i])
+        sum+=coefs_h[i]
     return err/sum
 
-#print("Simulation error = ",getError(nus_h,coefs_h,nus,coefs)*100,"%")
+print("Simulation error = ",getError(nus_h,coefs_h,nus,coefs)*100,"%")
 plt.plot(nus,coefs)
-#plt.show()
-coefs_h_i = np.interp(nus,nus_h,coefs_h)
-plt.plot(nus,coefs_h_i)
-plt.plot(nus,coefs-coefs_h_i)
+plt.plot(nus_h,coefs_h)
+
+plt.plot(nus,coefs-coefs_h)
 
 plt.ylabel("absorbance")
 plt.xlabel("wavenumber (cm-1)")

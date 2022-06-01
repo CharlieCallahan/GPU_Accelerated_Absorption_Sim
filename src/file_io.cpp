@@ -51,7 +51,7 @@ void fio::append_to(std::string filename, const char * data){
 }
 char* fio::load_from_bin_file(std::string filename){
     //Will return 0 if file fails to open
-    std::ifstream file (filename);
+    std::ifstream file (filename, std::ios_base::in | std::ios_base::binary);
     uint32_t size;
     if(!file.is_open()){
         std::cout << "FIO::Error failed to open: " << filename << std::endl;
@@ -67,7 +67,7 @@ char* fio::load_from_bin_file(std::string filename){
     return 0;
 }
 void fio::load_from_bin_file(std::string filename, char* mem_target, uint32_t size_bytes){
-    std::ifstream file (filename);
+    std::ifstream file (filename, std::ios_base::in | std::ios_base::binary);
     uint32_t size;
     if(!file.is_open()){
         std::cout << "FIO::Error Failed to open: " << filename << std::endl;
@@ -92,7 +92,7 @@ void fio::write_to(std::fstream* file, uint64_t bytePos, char* data, uint64_t si
 }
 
 void fio::create_empty_file_dense(std::string filename, uint64_t sizeBytes){
-    std::ofstream file (filename);
+    std::ofstream file (filename, std::ios_base::out | std::ios_base::binary);
     char filler = 0x1;
     uint32_t size32 = uint32_t(sizeBytes);
     file.write((char*)&(size32), sizeof(uint32_t));

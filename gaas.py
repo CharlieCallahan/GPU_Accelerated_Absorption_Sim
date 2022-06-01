@@ -32,11 +32,11 @@ import numpy as np
 
 #adds this range of wavenumbers to the GAAS simulation then pares it back so that features at the extremes of the wavenumber
 #are accurate 
-WAVENUMBUFFER = 20
+WAVENUMBUFFER = 50
 
 def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory, HITRANParDirectory, id, loadFromHITRAN=False):
     """
-    Generates absorption database related files in a compact binary format which allows GAAS C library to quickly
+    Generates absorption database related files in a compact binary format which allows GAAS binary to quickly
     load absorption parameters when running multiple simulations. Also loads a new TIPS file if there isnt one in the
     current directory
     :param startWavenum: First Wavenumber to simulate, any features with linecenter less than this are ignored
@@ -130,7 +130,7 @@ def gaasRunF32(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum,
 
     nus,coefs = gaasAPI.runSimF32(tempK, pressureAtm,conc,wavenumStep,startWavenumAdj,endWavenumAdj,gaasDir,moleculeID,int(isotopologueID),runID)
     buff = int(WAVENUMBUFFER/wavenumStep)
-    return ( nus[buff:len(nus)-buff],coefs[buff:len(coefs)-buff])
+    return ( nus[buff:len(nus)-buff+1],coefs[buff:len(coefs)-buff+1])
 
 def gaasRunF64(tempK, pressureAtm, conc, wavenumStep, startWavenum, endWavenum, gaasDir, moleculeID, isotopologueID, runID):
     """
@@ -154,7 +154,7 @@ def gaasRunF64(tempK, pressureAtm, conc, wavenumStep, startWavenum, endWavenum, 
     nus,coefs = gaasAPI.runSimF64(tempK, pressureAtm,conc,wavenumStep,startWavenumAdj,endWavenumAdj,gaasDir,moleculeID,int(isotopologueID),runID)
 
     buff = int(WAVENUMBUFFER/wavenumStep)
-    return ( nus[buff:len(nus)-buff],coefs[buff:len(coefs)-buff])
+    return (nus[buff:len(nus)-buff+1],coefs[buff:len(coefs)-buff+1])
     
 
 def runHAPI(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, moleculeID, isotopologueID, hapiDB):
@@ -171,7 +171,7 @@ def runHAPI(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, mo
     """
     #hapi.db_begin(hapiDB)
     HITRAN_molecules = ['H2O', 'CO2', 'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3',
-                        'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl'                        , 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2',
+                        'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl', 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2',
                         'NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
     molecule_number = (HITRAN_molecules.index(moleculeID)) + 1
     
