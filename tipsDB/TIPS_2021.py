@@ -260,8 +260,6 @@ while loopflag==0:
           Tflag=1
       else:  print ('the temperature range is',1,' to', Tmax[global_ID],' try again')  
     
-#    T=float(T)
-#    print T
     if(T==int(T)):
         key=str(int(T))
         print (molecules[int(mol)],'ISO=',int(iso),'Q(',key,' K)=',"{:.4E}".format(float(QTdict[key])))

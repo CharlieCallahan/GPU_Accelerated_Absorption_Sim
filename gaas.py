@@ -17,7 +17,7 @@
 # NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 # LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 import hapi
@@ -30,9 +30,9 @@ import tipsDB.genTIPSFile as gt
 from os import listdir
 import numpy as np
 
-#adds this range of wavenumbers to the GAAS simulation then pares it back so that features at the extremes of the wavenumber
-#are accurate 
-WAVENUMBUFFER = 50
+# adds this range of wavenumbers to the GAAS simulation then pares it back so that features at the extremes of the wavenumber range have the features outside the range added to them correctly.
+WAVENUMBUFFER = 0
+
 
 def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory, HITRANParDirectory, id, loadFromHITRAN=False):
     """
@@ -50,8 +50,9 @@ def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory
     isotopologues on HITRAN
     :return: void
     """
-    
-    saveAbsorptionDB(moleculeID, isotopologueID, gaasDirectory+moleculeID+"_iso_"+str(isotopologueID)+"_"+id, max(startWavenum-WAVENUMBUFFER,0),max(endWavenum+WAVENUMBUFFER,0), HITRANParDirectory, loadFromHITRAN=loadFromHITRAN)
+
+    saveAbsorptionDB(moleculeID, isotopologueID, gaasDirectory+moleculeID+"_iso_"+str(isotopologueID)+"_"+id, max(
+        startWavenum-WAVENUMBUFFER, 0), max(endWavenum+WAVENUMBUFFER, 0), HITRANParDirectory, loadFromHITRAN=loadFromHITRAN)
 
     # check for TIPS file in gaasDirectory.
     tipsFilename = moleculeID + "_iso_" + str(isotopologueID) + "_tips.csv"
@@ -63,6 +64,7 @@ def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory
     if shouldGenTips:
         print("generating TIPS file")
         gt.generateTIPSFile(moleculeID, isotopologueID, gaasDirectory)
+
 
 def saveAbsorptionDB(moleculeID, isotopologueNum, filename, minWavenum, maxWavenum, hapiLocation, strengthCutoff=0, loadFromHITRAN=False):
     """
@@ -76,20 +78,22 @@ def saveAbsorptionDB(moleculeID, isotopologueNum, filename, minWavenum, maxWaven
     :param loadFromHITRAN: True= dowload data from HITRAN or False= Use current HITRAN database file in hapiLocation,
     :return: void
     """
-    minWavenumAdj = max(minWavenum-WAVENUMBUFFER,0)
-    maxWavenumAdj = max(maxWavenum+WAVENUMBUFFER,0)
+    minWavenumAdj = max(minWavenum-WAVENUMBUFFER, 0)
+    maxWavenumAdj = max(maxWavenum+WAVENUMBUFFER, 0)
 
-    ssl._create_default_https_context = ssl._create_unverified_context #This may not be necessary on every system
+    # This may not be necessary on every system
+    ssl._create_default_https_context = ssl._create_unverified_context
     hapi.db_begin(hapiLocation)
     if loadFromHITRAN:
         HITRAN_molecules = ['H2O', 'CO2', 'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3',
-                            'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl', 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2','NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
+                            'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl', 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2', 'NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
         molecule_number = (HITRAN_molecules.index(moleculeID)) + 1
         hapi.fetch(moleculeID, molecule_number,
                    isotopologueNum, minWavenumAdj-1, maxWavenumAdj+1)
 
     hapi.describeTable(moleculeID)
-    nu, n_air,gamma_air,gamma_self,sw,elower,deltaAir = hapi.getColumns(moleculeID,['nu','n_air','gamma_air','gamma_self','sw','elower','delta_air'])
+    nu, n_air, gamma_air, gamma_self, sw, elower, deltaAir = hapi.getColumns(
+        moleculeID, ['nu', 'n_air', 'gamma_air', 'gamma_self', 'sw', 'elower', 'delta_air'])
     absParamData = []
 
     for i in range(len(nu)):
@@ -103,6 +107,7 @@ def saveAbsorptionDB(moleculeID, isotopologueNum, filename, minWavenum, maxWaven
             absParamData.append(deltaAir[i])
     print("saving ", len(absParamData)/7, " lines.")
 
+    # This file is formatted as a continuous array of gaas::linshapeSim::featureData structs (see Gaas.cuh)
     filehandler = open(filename, 'wb')
     for i in range(len(absParamData)):
         filehandler.write(bytearray(struct.pack("<d", absParamData[i])))
@@ -112,10 +117,10 @@ def gaasRunF32(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum,
     """
     runs simulation on GPU with 32 bit float precision
     suitable for older GPUs without support for atomicAdd(double *, double)  (Cuda architecture < 6.0 )
-    Will also be faster for applications where double (64 bit) precision is not necessary.
+    May also be faster for applications where double (64 bit) precision is not necessary.
     :param tempK:
     :param pressureAtm:
-    :param conc:
+    :param conc: molar concentration - pathlength is assumed to be 1cm, scale the spectra after to account for larger pathlength.
     :param wavenumStep: wavenumbers between each simulation sample, higher wavenumStep = faster
     :param startWavenum: first wavenumber to simulate
     :param endWavenum: last wavenumber to simulate
@@ -124,13 +129,15 @@ def gaasRunF32(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum,
     :param runID: Use multiple run ids if you want to run different simulations at the same time (ie with different molecules or wavenumber ranges)
     :return: (spectrum : list, wavenums : list)
     """
-    # ARGS: (double tempK, double pressureAtm, double conc, double wavenumStep, double startWavenum, double endWavenum, char * gaasDir, char * moleculeID, char * runID)
-    startWavenumAdj = max(startWavenum-WAVENUMBUFFER,0)
-    endWavenumAdj = max(endWavenum+WAVENUMBUFFER,0)
+    startWavenumAdj = max(startWavenum-WAVENUMBUFFER, 0)
+    endWavenumAdj = max(endWavenum+WAVENUMBUFFER, 0)
 
-    nus,coefs = gaasAPI.runSimF32(tempK, pressureAtm,conc,wavenumStep,startWavenumAdj,endWavenumAdj,gaasDir,moleculeID,int(isotopologueID),runID)
+    #this calls the compiled GAAS module
+    nus, coefs = gaasAPI.runSimF32(tempK, pressureAtm, conc, wavenumStep, startWavenumAdj,
+                                   endWavenumAdj, gaasDir, moleculeID, int(isotopologueID), runID)
     buff = int(WAVENUMBUFFER/wavenumStep)
-    return ( nus[buff:len(nus)-buff+1],coefs[buff:len(coefs)-buff+1])
+    return (nus[buff:len(nus)-buff+1], coefs[buff:len(coefs)-buff+1])
+
 
 def gaasRunF64(tempK, pressureAtm, conc, wavenumStep, startWavenum, endWavenum, gaasDir, moleculeID, isotopologueID, runID):
     """
@@ -138,7 +145,7 @@ def gaasRunF64(tempK, pressureAtm, conc, wavenumStep, startWavenum, endWavenum, 
     requires Cuda architecture >= 6.0
     :param tempK:
     :param pressureAtm:
-    :param conc:
+    :param conc: molar concentration - pathlength is assumed to be 1cm, scale the spectra after to account for larger pathlength.
     :param wavenumStep: wavenumbers between each simulation sample, higher wavenumStep = faster
     :param startWavenum: first wavenumber to simulate
     :param endWavenum: last wavenumber to simulate
@@ -148,14 +155,16 @@ def gaasRunF64(tempK, pressureAtm, conc, wavenumStep, startWavenum, endWavenum, 
     :return: (spectrum : list, wavenums : list)
     """
     # ARGS: (double tempK, double pressureAtm, double conc, double wavenumStep, double startWavenum, double endWavenum, char * gaasDir, char * moleculeID, char * runID)
-    startWavenumAdj = max(startWavenum-WAVENUMBUFFER,0)
-    endWavenumAdj = max(endWavenum+WAVENUMBUFFER,0)
-
-    nus,coefs = gaasAPI.runSimF64(tempK, pressureAtm,conc,wavenumStep,startWavenumAdj,endWavenumAdj,gaasDir,moleculeID,int(isotopologueID),runID)
+    startWavenumAdj = max(startWavenum-WAVENUMBUFFER, 0)
+    endWavenumAdj = max(endWavenum+WAVENUMBUFFER, 0)
+    
+    #this calls the compiled GAAS module
+    nus, coefs = gaasAPI.runSimF64(tempK, pressureAtm, conc, wavenumStep, startWavenumAdj,
+                                   endWavenumAdj, gaasDir, moleculeID, int(isotopologueID), runID)
 
     buff = int(WAVENUMBUFFER/wavenumStep)
-    return (nus[buff:len(nus)-buff+1],coefs[buff:len(coefs)-buff+1])
-    
+    return (nus[buff:len(nus)-buff+1], coefs[buff:len(coefs)-buff+1])
+
 
 def runHAPI(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, moleculeID, isotopologueID, hapiDB):
     """
@@ -169,19 +178,20 @@ def runHAPI(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, mo
     :param moleculeID:
     :return: (spectrum, wavenums)
     """
-    #hapi.db_begin(hapiDB)
+    # hapi.db_begin(hapiDB)
     HITRAN_molecules = ['H2O', 'CO2', 'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3',
                         'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl', 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2',
                         'NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
     molecule_number = (HITRAN_molecules.index(moleculeID)) + 1
-    
+
     nus, coefs = hapi.absorptionCoefficient_Voigt(Components=[(molecule_number, isotopologueID, conc)],
                                                   SourceTables=moleculeID,
                                                   Environment={
                                                       'p': pressureAtm, 'T': tempK},
                                                   Diluent={'self': conc,
-                                                           'air': 1 - conc}, 
-                                                  WavenumberRange=(startWavenum,endWavenum),
+                                                           'air': 1 - conc},
+                                                  WavenumberRange=(
+                                                      startWavenum, endWavenum),
                                                   WavenumberStep=wavenumStep, HITRAN_units=False)
 
     return (nus, coefs)

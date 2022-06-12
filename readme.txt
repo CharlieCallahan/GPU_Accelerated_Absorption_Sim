@@ -1,14 +1,28 @@
 Build & install instructions:
 
-make sure you have python3 installed
+Windows python module quick install guide:
 
-install the latest nvidia drivers for your GPU https://www.nvidia.com/Download/index.aspx
+	1. Install the latest Nvidia drivers for your GPU https://www.nvidia.com/Download/index.aspx
 
-install microsoft visual studio build tools (only versions 2017-2019 work!) if you are using windows, this downloads the required windows c++ compiler
+	2. Install Microsoft Visual Studio Build tools 2019 (The version must be 2017-2019, the newer versions arent yet compatible with the Nvidia libraries).
 
-Then install the nvidia cuda toolkit at https://developer.nvidia.com/cuda-downloads
+	3. Install the Nvidia Cuda toolkit at https://developer.nvidia.com/cuda-downloads , this downloads the GPU compute libraries.
 
-Then from there you should be able to compile the C/C++/Cuda code using gcc/g++/nvcc
+	4. Run "x64 Native Tools Command Prompt for VS 2019"
+	
+	5. In the command prompt, move to the pyInterface directory using the command:
+		cd {pyInterface directory path}
+	
+	6. Build the python module with the command: 
+		python3 setup.py build
+	
+	7. Install the python module with the command:
+		python3 setup.py install --user
+	
+	8. Now you should be able to use the GAAS api from your default python environment, if you want to use it from a virtual environment
+	   you need to copy the .pyd file in pyInterface/build/lib.win-*/ into your virtual environment.
+
+	9. The gaas.py file contains wrapper functions around the gaasAPI functions for ease of use. The functions in this file should be used in most cases.
 
 The library can also be built as a python module to be directly swapped in as a much faster replacement of 
 the hapi absorptionCoefficient_Voigt function. 
