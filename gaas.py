@@ -31,7 +31,7 @@ from os import listdir
 import numpy as np
 
 # adds this range of wavenumbers to the GAAS simulation then pares it back so that features at the extremes of the wavenumber range have the features outside the range added to them correctly.
-WAVENUMBUFFER = 0
+WAVENUMBUFFER = 50
 
 
 def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory, HITRANParDirectory, id, loadFromHITRAN=False):
