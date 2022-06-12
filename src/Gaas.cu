@@ -1779,7 +1779,13 @@ extern "C"
 
 		int numberFeatures = lastFeature - firstFeature;	// number of features = total number of cuda threads
 		int padding = numberFeatures % cudaThreadsPerBlock; // added so that kernel can run an integer # of cuda blocks
-
+		
+		if (numberFeatures < cudaThreadsPerBlock){
+			padding = cudaThreadsPerBlock - numberFeatures;
+		} else {
+			padding = numberFeatures % cudaThreadsPerBlock; // added so that kernel can run an integer # of cuda blocks
+		}
+														// feature database has padding added in when it is loaded, so the data is initialized
 		// set device
 		cudaError_t cudaStatus;
 		cudaStatus = cudaSetDevice(this->cudaDevice);
