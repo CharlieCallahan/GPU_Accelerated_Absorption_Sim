@@ -20,7 +20,6 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
 
 IDIR = ./include
-TEST_TARGET = kernel
 LIB_TARGET = gaasCWrapper.so
 SRCDIR = ./src
 
@@ -40,15 +39,12 @@ NVCC = nvcc #cuda compiler call
 CC = g++ #cpp compiler call
 
 clean : 
-	rm -f $(OBJS) $(TEST_TARGET).o
+	rm -f $(OBJS)
 	echo Clean done
 
-all : $(TEST_TARGET) $(LIB_TARGET)
+all : $(LIB_TARGET)
 	make clean
 	echo All done
-
-$(TEST_TARGET) : $(OBJS) $(TEST_TARGET).o
-	$(NVCC) -g -o $@ $^ $(NVCCFLAGS)
 
 $(LIB_TARGET) : $(OBJS) 
 	g++ -shared -o lib$@ $^ -fPIC

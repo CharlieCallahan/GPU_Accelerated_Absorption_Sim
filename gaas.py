@@ -30,11 +30,12 @@ import tipsDB.genTIPSFile as gt
 from os import listdir
 import numpy as np
 
-# adds this range of wavenumbers to the GAAS simulation then pares it back so that features at the extremes of the wavenumber range have the features outside the range added to them correctly.
+# this tells GAAS how many wavenumbers to add to the extremities of the spectrum - the spectrum is then pared back to the 
+# original size. This improves the accurracy of the simulation at the min and max wavenumbers of the spectrum
 WAVENUMBUFFER = 50
 
 
-def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory, HITRANParDirectory, id, loadFromHITRAN=False):
+def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory, ParDirectory, id, loadFromHITRAN=False):
     """
     Generates absorption database related files in a compact binary format which allows GAAS binary to quickly
     load absorption parameters when running multiple simulations. Also loads a new TIPS file if there isnt one in the
@@ -43,9 +44,9 @@ def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory
     :param endWavenum: Last wavenumber to simulate, any features with linecenter greater than this are ignored
     :param moleculeID: HITRAN id of molecule to simulate ex: 'H2O', 'CO2' etc.
     :param gaasDirectory: Directory path to store Gaas program data
-    :param HITRANParDirectory: directory containing HITRAN Par files
+    :param ParDirectory: directory containing HITRAN Par files
     :param id: id to refer to this initialization when running simulation
-    :param loadFromHITRAN: specify True if you want to download par files from Hitran server
+    :param loadFromHITRAN: specify True if you want to download par files from the Hitran server
     :param isotopologueID: default is 1, specifies the isotopologue (integer) of the molecule being used, matches the indexing of
     isotopologues on HITRAN
     :return: void
@@ -117,7 +118,6 @@ def gaasRunF32(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum,
     """
     runs simulation on GPU with 32 bit float precision
     suitable for older GPUs without support for atomicAdd(double *, double)  (Cuda architecture < 6.0 )
-    May also be faster for applications where double (64 bit) precision is not necessary.
     :param tempK:
     :param pressureAtm:
     :param conc: molar concentration - pathlength is assumed to be 1cm, scale the spectra after to account for larger pathlength.
