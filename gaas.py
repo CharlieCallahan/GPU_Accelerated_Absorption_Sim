@@ -53,7 +53,7 @@ def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory
     """
 
     saveAbsorptionDB(moleculeID, isotopologueID, gaasDirectory+moleculeID+"_iso_"+str(isotopologueID)+"_"+id, max(
-        startWavenum-WAVENUMBUFFER, 0), max(endWavenum+WAVENUMBUFFER, 0), HITRANParDirectory, loadFromHITRAN=loadFromHITRAN)
+        startWavenum-WAVENUMBUFFER, 0), max(endWavenum+WAVENUMBUFFER, 0), ParDirectory, loadFromHITRAN=loadFromHITRAN)
 
     # check for TIPS file in gaasDirectory.
     tipsFilename = moleculeID + "_iso_" + str(isotopologueID) + "_tips.csv"
