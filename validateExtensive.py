@@ -171,7 +171,7 @@ def genTPVal():
     conc = 0.05
     gs.gaasInit(startWavenum,endWavenum,species,1,gaasDirPath,cwd+'\\HTData',"test",loadFromHITRAN=True)
     temps = np.linspace(200,1500,10)
-    pressures = np.linspace(.1,5,10)
+    pressures = np.linspace(.01,5,30)
     out = valTempPressure(temps,pressures,conc,wavenumStep,iso,startWavenum,endWavenum,species,gaasDirPath)
     out.to_csv(cwd+"\\Validation\\TPValidationH2O.csv")
 
@@ -224,7 +224,7 @@ def mergeHITEMPFiles(orderedFileList, outfilename):
 #hapi.db_begin(cwd+"/HTData")
 #for s in species:
 #    gs.gaasInit(startWavenum,endWavenum,s,1,gaasDirPath,cwd+'\\HTData',"test",loadFromHITRAN=False)
-genSpecVal()
-# genTPVal()
+#genSpecVal()
+genTPVal()
 # runSpeedTests()
 #compares output between GAAS and HAPI over a range of different conditions
