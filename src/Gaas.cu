@@ -1648,10 +1648,10 @@ extern "C"
 		int numberFeatures = lastFeature - firstFeature;	// number of features = total number of cuda threads
 		int padding;
 		
-		if (numberFeatures < cudaThreadsPerBlock){
+		if (numberFeatures <= cudaThreadsPerBlock){
 			padding = cudaThreadsPerBlock - numberFeatures;
 		} else {
-			padding = numberFeatures % cudaThreadsPerBlock; // added so that kernel can run an integer # of cuda blocks
+			padding = cudaThreadsPerBlock - (numberFeatures - (numberFeatures/cudaThreadsPerBlock)*cudaThreadsPerBlock); //numberFeatures % cudaThreadsPerBlock; // added so that kernel can run an integer # of cuda blocks
 		}
 														// feature database has padding added in when it is loaded, so the data is initialized
 		// set device
@@ -1701,6 +1701,8 @@ extern "C"
 		int numBlocks = int((numberFeatures + padding) / cudaThreadsPerBlock);
 #ifndef SILENT
 		std::cout << "# Blocks: " << numBlocks << "\n";
+		std::cout << "# features: " << numberFeatures + 1 << "\n";
+		std::cout << "padding: " << padding << "\n";
 #endif
 		gaas::lineshapeSim::lineshapeFloat<<<numBlocks, cudaThreadsPerBlock>>>(dWavenums, dFeatDatabase, dSpecTarget, tempK, pressureAtm, conc, tipsRef, tipsTemp, startWavenum, wavenumStep, numWavenums, molarMass, isotopeAbundance, this->cudaThreadsPerBlock);
 
@@ -1898,7 +1900,7 @@ extern "C"
 		double maxHW = fmax(dopHWHM, lorHWHM);
 		double minWavenum = database[i].transWavenum - maxHW * WAVENUM_WING;
 		double maxWavenum = database[i].transWavenum + maxHW * WAVENUM_WING;
-		int minInd = toWavenumIndex(startWavenum, wavenumStep, minWavenum);
+		int minInd = toWavenumIndex(startWavenum, wavenumStep, minWavenum) + 1; //the +1 makes this equivalent to hapi
 		int maxInd = toWavenumIndex(startWavenum, wavenumStep, maxWavenum);
 
 		// minInd = minInd * (minInd >= 0); //branchless (no 'if' statement) way to set minInd to zero if it is negative
@@ -1939,7 +1941,7 @@ extern "C"
 		double maxHW = fmax(dopHWHM, lorHWHM);
 		double minWavenum = database[i].transWavenum - maxHW * WAVENUM_WING;
 		double maxWavenum = database[i].transWavenum + maxHW * WAVENUM_WING;
-		int minInd = toWavenumIndex(startWavenum, wavenumStep, minWavenum);
+		int minInd = toWavenumIndex(startWavenum, wavenumStep, minWavenum) + 1; //the +1 makes this equivalent to hapi
 		int maxInd = toWavenumIndex(startWavenum, wavenumStep, maxWavenum);
 
 		// minInd = minInd * (minInd >= 0); //branchless (no 'if' statement) way to set minInd to zero if it is negative

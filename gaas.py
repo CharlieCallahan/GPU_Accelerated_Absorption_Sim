@@ -136,7 +136,7 @@ def gaasRunF32(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum,
     nus, coefs = gaasAPI.runSimF32(tempK, pressureAtm, conc, wavenumStep, startWavenumAdj,
                                    endWavenumAdj, gaasDir, moleculeID, int(isotopologueID), runID)
     buff = int(WAVENUMBUFFER/wavenumStep)
-    return (nus[buff:len(nus)-buff+1], coefs[buff:len(coefs)-buff+1])
+    return (nus[buff:(len(nus)-buff+1)], coefs[buff:(len(coefs)-buff+1)])
 
 
 def gaasRunF64(tempK, pressureAtm, conc, wavenumStep, startWavenum, endWavenum, gaasDir, moleculeID, isotopologueID, runID):
@@ -163,7 +163,7 @@ def gaasRunF64(tempK, pressureAtm, conc, wavenumStep, startWavenum, endWavenum, 
                                    endWavenumAdj, gaasDir, moleculeID, int(isotopologueID), runID)
 
     buff = int(WAVENUMBUFFER/wavenumStep)
-    return (nus[buff:len(nus)-buff+1], coefs[buff:len(coefs)-buff+1])
+    return (nus[buff:(len(nus)-buff+1)], coefs[buff:(len(coefs)-buff+1)])
 
 
 def runHAPI(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, moleculeID, isotopologueID, hapiDB):
