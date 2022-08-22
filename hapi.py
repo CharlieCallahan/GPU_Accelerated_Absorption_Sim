@@ -19156,6 +19156,7 @@ def absorptionCoefficient_Voigt(Components=None,SourceTables=None,partitionFunct
             #   get final wing of the line according to Gamma0, OmegaWingHW and OmegaWing
             OmegaWingF = max(OmegaWing,OmegaWingHW*Gamma0,OmegaWingHW*GammaD)
 
+
             BoundIndexLower = bisect(Omegas,LineCenterDB-OmegaWingF)
             BoundIndexUpper = bisect(Omegas,LineCenterDB+OmegaWingF)
             lineshape_vals = PROFILE_VOIGT(LineCenterDB+Shift0,GammaD,Gamma0,Omegas[BoundIndexLower:BoundIndexUpper])[0]

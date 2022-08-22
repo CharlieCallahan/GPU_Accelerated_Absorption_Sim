@@ -3,7 +3,7 @@ set nvccFlags=-Iinclude -gencode arch=compute_35,code=sm_35 -gencode arch=comput
 nvcc -rdc=true -g -o GAAS.dll --shared src\Gaas.cu src\file_io.cpp src\gaasCWrapper.cpp src\Stopwatch.cpp %nvccFlags%
 copy GAAS.dll pyInterface\GAAS.dll
 copy GAAS.lib pyInterface\GAAS.lib
-del *.obj
+del *.obj 
 del *.pdb
 del *.exp
 del GAAS.dll GAAS.lib

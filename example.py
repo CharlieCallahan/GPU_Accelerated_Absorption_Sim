@@ -26,10 +26,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 
-startWavenum = 10e6/1500
-endWavenum = 10e6/1300
+startWavenum = 1000
+endWavenum = 3000
 wavenumStep = 0.001 #wavenums per simulation step
-mol = 'H2O' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
+mol = 'O2' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
 iso = 1 #isotopologue num
 T = 300 #K
 P = 1.0 #atm
