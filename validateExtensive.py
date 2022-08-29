@@ -83,6 +83,17 @@ def valSpecies(T, P, conc, res, iso, startWavenum, endWavenum, speciesList, gaas
     outpd = pd.DataFrame(out, columns=["P","T","conc","molID","HAPI_Time_s","GAAS32_Time_s","GAAS64_Time_s","g32 Error %","g64 Error %"])
     return outpd
 
+def valConcs(T, P, concs, res, iso, startWavenum, endWavenum, species, gaasDirPath):
+    out = []
+    for c in concs:
+        #gs.gaasInit(startWavenum,endWavenum,species,iso,gaasDirPath,cwd+'HTData',"test",loadFromHITRAN=True)
+        err32, err64, hTime, gTime32, gTime64 = genError(T,P,c,res,startWavenum, endWavenum, species, iso, gaasDirPath)
+        row = [P,T,c,species,hTime,gTime32,gTime64,err32,err64]
+        print(row)
+        out.append(row)
+    outpd = pd.DataFrame(out, columns=["P","T","conc","molID","HAPI_Time_s","GAAS32_Time_s","GAAS64_Time_s","g32 Error %","g64 Error %"])
+    return outpd
+
 def genSpecVal():
     #generates validation dataset over a few species and 4 different conditions: 300K 1atm, 600K 1atm, 300K 5atm, 600K 5atm
     #may take a while
@@ -124,6 +135,46 @@ def genSpecVal():
     results = valSpecies(T,P,conc,wavenumStep, iso,startWavenum,endWavenum,species,gaasDirPath)
     print(results)
     results.to_csv(cwd+"\\Validation\\speciesValidation_600K_5atm.csv")
+
+def genConcVal():
+    T = 300
+    P = 1.0
+    species =  'H2O'
+    startWavenum = 1000
+    endWavenum = 5000
+    wavenumStep = 0.0001 #wavenums per simulation step
+    gs.gaasInit(startWavenum,endWavenum,species,1,gaasDirPath,cwd+'\\HTData',"test",loadFromHITRAN=True)
+
+    concs = np.linspace(0.01,0.9,10)
+    iso = 1 #isotopologue num
+    T = 300 #K
+    P = 1.0 #atm
+    res = valConcs(T, P, concs, wavenumStep, iso, startWavenum, endWavenum, species, gaasDirPath)
+    print(res)
+    res.to_csv(os.path.join(cwd,"Validation","concValidation_300K_1atm.csv"))
+
+    iso = 1 #isotopologue num
+    T = 600 #K
+    P = 1.0 #atm
+    res = valConcs(T, P, concs, wavenumStep, iso, startWavenum, endWavenum, species, gaasDirPath)
+    print(res)
+    res.to_csv(os.path.join(cwd,"Validation","concValidation_600K_1atm.csv"))
+
+    iso = 1 #isotopologue num
+    T = 300 #K
+    P = 5.0 #atm
+    res = valConcs(T, P, concs, wavenumStep, iso, startWavenum, endWavenum, species, gaasDirPath)
+    print(res)
+    res.to_csv(os.path.join(cwd,"Validation","concValidation_300K_5atm.csv"))
+
+    iso = 1 #isotopologue num
+    T = 600 #K
+    P = 5.0 #atm
+    res = valConcs(T, P, concs, wavenumStep, iso, startWavenum, endWavenum, species, gaasDirPath)
+    print(res)
+    res.to_csv(os.path.join(cwd,"Validation","concValidation_600K_5atm.csv"))
+    
+    
 
 def getNumLines(moleculeID, minwvn, maxwvn):
     #returns the number of lines over minwvn to maxwvn
@@ -225,6 +276,7 @@ def mergeHITEMPFiles(orderedFileList, outfilename):
 #for s in species:
 #    gs.gaasInit(startWavenum,endWavenum,s,1,gaasDirPath,cwd+'\\HTData',"test",loadFromHITRAN=False)
 #genSpecVal()
-genTPVal()
+# genTPVal()
+genConcVal()
 # runSpeedTests()
 #compares output between GAAS and HAPI over a range of different conditions

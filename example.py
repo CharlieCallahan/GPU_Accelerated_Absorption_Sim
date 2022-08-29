@@ -29,10 +29,10 @@ import time
 startWavenum = 1000
 endWavenum = 3000
 wavenumStep = 0.001 #wavenums per simulation step
-mol = 'O2' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
+mol = 'NO' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
 iso = 1 #isotopologue num
-T = 300 #K
-P = 1.0 #atm
+T = 600 #K
+P = 5.0 #atm
 conc = 0.05
 #pathlength is assumed to be 1cm, if you want to use a different pathlenth, scale the absorbance by pl_cm
 
@@ -68,7 +68,7 @@ t0_h = time.time()
 
 t1 = time.time()
 
-nus, coefs = gs.gaasRunF32(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDirPath,mol,iso,"runTest")
+nus, coefs = gs.gaasRunF64(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDirPath,mol,iso,"runTest")
 
 print("GAAS sim time: ",time.time()-t1)
 print("HAPI sim time: ",t0_h-t0)
