@@ -53,16 +53,16 @@ def genError(T,P,conc,wavenumStep,startWavenum, endWavenum, mol, iso, gaasDir, i
     #generates error between HAPI and GAAS and returns execution time
 
     #for some reason the first run is always slower, so this just primes the GPU so that the timing is accurate for timed runs.
-    nus_g32,coefs_g32 = gs.gaasRunF32(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDir,mol,iso,id)
+    nus_g32,coefs_g32 = gs.gaasSimVoigt(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDir,mol,iso,id)
 
     print("Running GAAS 32")
     t1 = time.time()
-    nus_g32,coefs_g32 = gs.gaasRunF32(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDir,mol,iso,id)
+    nus_g32,coefs_g32 = gs.gaasSimVoigt(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDir,mol,iso,id)
     gTime32 = time.time() - t1
 
     print("Running GAAS 64")
     t1 = time.time()
-    nus_g64,coefs_g64 = gs.gaasRunF64(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDir,mol,iso,id)
+    nus_g64,coefs_g64 = gs.gaasSimVoigt(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDir,mol,iso,id)
     gTime64 = time.time() - t1
 
     print("Running HAPI")

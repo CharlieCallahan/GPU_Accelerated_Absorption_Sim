@@ -20,6 +20,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "inputStructs.hpp"
+
 #if defined(WIN64) || defined(WIN32)
 
 #ifdef GAAS_EXPORT
@@ -33,6 +35,20 @@
 #define FUNC_PREPEND
 #endif
 
-FUNC_PREPEND void runSimFloat(double tempK, double pressureAtm, double conc, float *spectrumTarget, double *wavenumsTarget, double wavenumStep, double startWavenum, double endWavenum, char *gaasDir, char *moleculeID, int isoNum, char *runID); // runs simulation with 32 bit float precision, this works on older GPU architectures with slightly more error due to numerical precision
+FUNC_PREPEND void simVoigt(double tempK, double pressureAtm, double conc, float *spectrumTarget, double *wavenumsTarget, double wavenumStep, double startWavenum, double endWavenum, char *gaasDir, char *moleculeID, int isoNum, char *runID); // runs simulation with 32 bit float precision, this works on older GPU architectures with slightly more error due to numerical precision
 
-FUNC_PREPEND void runSimDouble(double tempK, double pressureAtm, double conc, double *spectrumTarget, double *wavenumsTarget, double wavenumStep, double startWavenum, double endWavenum, char *gaasDir, char *moleculeID, int isoNum, char *runID); // runs simulation with 32 bit float precision, this works on older GPU architectures with slightly more error due to numerical precision
+/**
+ * @brief Runs a HT profile simulation over the wavenumber domain (startWavenum to endWavenum with resolution given by wavenumStep)
+ *        Calculates the profile for each absorption profile in the features array in parallel and adds them to the output array (spectrumTarget).
+ * 
+ * @param features 
+ * @param numFeatures 
+ * @param spectrumTarget 
+ * @param wavenumsTarget 
+ * @param wavenumStep 
+ * @param startWavenum 
+ * @param endWavenum 
+ * @return FUNC_PREPEND 
+ */
+
+FUNC_PREPEND void simHTP(struct featureDataHTP *features, int numFeatures, float tempK, float molarMass, float *spectrumTarget, double *wavenumsTarget, double wavenumStep, double startWavenum, double endWavenum);

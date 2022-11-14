@@ -63,6 +63,7 @@
 #include <sstream>
 #include <map>
 #include "Stopwatch.hpp"
+#include "inputStructs.hpp"
 
 #ifdef __cplusplus
 extern "C"
@@ -79,6 +80,8 @@ extern "C"
 #define CBOLTZ_CGS 1.380648813E-16			// CGS units
 #define WAVENUM_WING 50						// how many halfwidths to compute around center of voigt function
 #define DBL_EPSILON 2.2204460492503131e-016 // smallest such that 1.0+DBL_EPSILON != 1.0
+#define SQRT_PI 1.77245385091
+#define M_PI 3.14159265358979323846
 
 	// From MIT Implementation of Fadeeva function
 	typedef cuDoubleComplex cmplx;
@@ -181,10 +184,10 @@ extern "C"
 
 		}
 
-		namespace lineshapeSim
+		namespace VoigtLineshape
 		{
 
-			struct featureData
+			struct featureDataVoigt
 			{ // absorption feature database entry. data needed to calculate lineshape
 				double transWavenum = 0;
 				double nAir = 0;
@@ -233,10 +236,7 @@ extern "C"
 				// runs with float precision
 				void runFloat(double tempK, double pressureAtm, double conc, float *spectrumTarget, double *wavenumsTarget, double wavenumStep, double startWavenum, double endWavenum, double molarMass, double isotopeAbundance);
 
-				// double atomic add required for this is only available in cuda arch > 6.0 gpus
-				void runDouble(double tempK, double pressureAtm, double conc, double *spectrumTarget, double *wavenumsTarget, double wavenumStep, double startWavenum, double endWavenum, double molarMass, double isotopeAbundance);
-
-				featureData *featDatabase;
+				featureDataVoigt *featDatabase;
 				int absFeatCount; // number of features in database
 				PartitionSum *tips;
 
@@ -262,10 +262,28 @@ extern "C"
 			__device__ inline int toWavenumIndex(double startWavenum, double wavenumStep, double wavenumInput);
 
 			// main function for simulating lineshape.
-			__global__ void lineshapeFloat(double *wavenums, featureData *database, float *output, double tempK, double pressAtm, double conc, double tipsRef, double tipsTemp, double startWavenum, double wavenumStep, int wavenumCount, double molarMass, double isotopeAbundance, int threadsPerBlock);
-			// double atomic add required for this is only available in cuda arch > 6.0 gpus
-			__global__ void lineshapeDouble(double *wavenums, featureData *database, double *output, double tempK, double pressAtm, double conc, double tipsRef, double tipsTemp, double startWavenum, double wavenumStep, int wavenumCount, double molarMass, double isotopeAbundance, int threadsPerBlock);
+			__global__ void lineshapeVoigt(double *wavenums, featureDataVoigt *database, float *output, double tempK, double pressAtm, double conc, double tipsRef, double tipsTemp, double startWavenum, double wavenumStep, int wavenumCount, double molarMass, double isotopeAbundance, int threadsPerBlock);
 
+			//return the larger of the two values
+			__device__ float floatMax(float f1, float f2);
+		}
+
+		namespace HTPLineshape
+		{
+			/**
+			 * @brief Dispatches a lineshapeHTP process on enough GPU threads to simulate every feature in "features"
+			 * 
+			 * @param features 
+			 * @param numFeatures 
+			 * @param spectrumTarget 
+			 * @param wavenumsTarget 
+			 * @param wavenumStep 
+			 * @param startWavenum 
+			 * @param endWavenum 
+			 */
+			void simulateHTP(featureDataHTP* features, int numFeatures, float tempK, float molarMass, float *spectrumTarget, double *wavenumsTarget, double wavenumStep, double startWavenum, double endWavenum);
+
+			__global__ void lineshapeHTP(double *wavenums, featureDataHTP *database, float *output, float tempK, float startWavenum, float wavenumStep, int wavenumCount, float molarMass, int threadsPerBlock);
 		}
 
 		// fadeeva function

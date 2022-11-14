@@ -20,8 +20,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef Stopwatch_hpp
-#define Stopwatch_hpp
+#ifndef STOPWATCH_HPP
+#define STOPWATCH_HPP
 
 #include <stdio.h>
 #include <chrono>
@@ -38,4 +38,4 @@ private:
     std::chrono::high_resolution_clock::time_point t1;
     std::chrono::high_resolution_clock::time_point t2;
 };
-#endif /* Stopwatch_hpp */
+#endif /* STOPWATCH_HPP */

@@ -20,20 +20,23 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
 
 import gaas as gs
+gs.gaasSimHTP([(1,1,1,1,1,1,1,1)],300,1,0.01,3000,4000)
+exit(0)
+
 import os
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import time
 
-startWavenum = 1000
-endWavenum = 3000
-wavenumStep = 0.001 #wavenums per simulation step
-mol = 'NO' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
+startWavenum = 7200
+endWavenum = 7600
+wavenumStep = 0.005 #wavenums per simulation step
+mol = 'H2O' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
 iso = 1 #isotopologue num
-T = 600 #K
+T = 300 #K
 P = 5.0 #atm
-conc = 0.05
+conc = 0.1
 #pathlength is assumed to be 1cm, if you want to use a different pathlenth, scale the absorbance by pl_cm
 
 cwd = os.path.dirname(os.path.realpath(__file__))
@@ -68,7 +71,7 @@ t0_h = time.time()
 
 t1 = time.time()
 
-nus, coefs = gs.gaasRunF64(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDirPath,mol,iso,"runTest")
+nus, coefs = gs.gaasSimVoigt(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDirPath,mol,iso,"runTest")
 
 print("GAAS sim time: ",time.time()-t1)
 print("HAPI sim time: ",t0_h-t0)
