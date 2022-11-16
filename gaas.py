@@ -137,10 +137,30 @@ def gaasSimVoigt(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenu
     buff = int(WAVENUMBUFFER/wavenumStep)
     return (nus[buff:(len(nus)-buff+1)], coefs[buff:(len(coefs)-buff+1)])
 
+class HTPFeatureData:
+    #used to pass a list of feature data objects to gaasSimHTP
+    
+    def __init__(self, linecenter: float, Gam0: float, Gam2: float, Delta0: float, Delta2: float, anuVC: float, eta: float, lineIntensity: float) -> None:
+        self.dataTuple = (linecenter,Gam0,Gam2,Delta0,Delta2,anuVC,eta,lineIntensity)
+    
+
+
 def gaasSimHTP(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum):
-    #features_in, &numFeatures_in, &temp_in, &molarMass_in, &wavenumStep_in, &startWavenum_in, &endWavenum_in
-    print("calling sim_htp")
-    gaasAPI.sim_htp(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum)
+    """
+    Runs HTP simulation using GAAS, simulates each feature in features to produce an absorbance spectrum and wavenumber array
+    :param features: list of HTPFeatureData objects
+    :param tempK: temperature in Kelvin
+    :param molarMass: molar mass of absorber
+    :param wavenumStep: wavenumber resolution
+    :param startWavenum: wavenumber range start
+    :param endWavenum: wavenumber range end
+    :return: (spectrum, wavenums)
+    """
+    features_arg = []
+    for f in features:
+        features_arg.append(f.dataTuple)
+    
+    return gaasAPI.sim_htp(features_arg, tempK, molarMass, wavenumStep, startWavenum, endWavenum)
 
 
 def runHAPI(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, moleculeID, isotopologueID, hapiDB):

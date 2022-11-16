@@ -13,7 +13,7 @@ struct featureDataHTP
     float Delta2; //shift2
     float anuVC; //nuVC
     float eta; //eta
-    float lineIntensity; //line intensity
+    float lineIntensity=0; //line intensity
 };
 
 #endif /* INPUTSTRUCTS_HPP */

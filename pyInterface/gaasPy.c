@@ -74,7 +74,6 @@ static PyObject* sim_htp(PyObject* self, PyObject* args){
 	//	list of tuples  		   float        float            float               float                float            
 //ARGS: featureDataHTP* features, float tempK, float molarMass, double wavenumStep, double startWavenum, double endWavenum
 //feature struct tuple:
-	printf("-1");
 
 	PyObject* features_in; //list of tuples 
 	double temp_in;
@@ -87,16 +86,16 @@ static PyObject* sim_htp(PyObject* self, PyObject* args){
 		printf("Failed to parse args\n");
 		return NULL;
 	}
-	printf("0");
+
 	if(!PyList_Check(features_in)){
 		printf("Error: must pass a list as the first argument to gaas.sim_htp");
 		return NULL;
 	}
-	//parse features
-	int numFeatures = PyList_Size(features_in);
 
+	//parse features
+	Py_ssize_t numFeatures = PyList_Size(features_in);
 	struct featureDataHTP* features = (struct featureDataHTP*)malloc(sizeof(struct featureDataHTP)*numFeatures);
-	printf("1");
+
 	for(int i = 0; i < numFeatures; i++){
 		PyObject* currTuple = PyList_GetItem(features_in,i);
 		if(!PyTuple_Check(currTuple)){
@@ -159,17 +158,41 @@ static PyObject* sim_htp(PyObject* self, PyObject* args){
 			return NULL;
 		}
 		features[i].lineIntensity = (float)PyFloat_AsDouble(currTupleItem);
+		// printf(" feature data: %f, %f, %f, %f, %f, %f, %f, %f\n",features[i].anuVC,features[i].Delta0,features[i].Delta2,features[i].eta,features[i].Gam0,features[i].Gam2,features[i].linecenter,features[i].lineIntensity);
 	}
 
 	int numWavenums = (int)((endWavenum_in-startWavenum_in)/wavenumStep_in);
 	float* spectrumTarget = (float*)malloc(numWavenums*sizeof(float));//new float [wavenumRes];
 	double* wavenumsTarget = (double*)malloc(numWavenums*sizeof(double));
 	
-	printf("successfully parsed");
+	//run simulation
+	simHTP(features, (int)numFeatures, temp_in, molarMass_in, spectrumTarget, wavenumsTarget, wavenumStep_in, startWavenum_in, endWavenum_in);
+
+	PyObject* spectrumList = PyList_New(numWavenums);
+	PyObject* wavenumsList = PyList_New(numWavenums);
+	PyObject* tempVal;
+
+	//convert outputs into python lists
+
+	for(int i = 0; i < numWavenums; i++){
+		//add results to py lists for output
+		tempVal = Py_BuildValue("f",spectrumTarget[i]);
+		PyList_SetItem(spectrumList, i, tempVal);
+		
+		tempVal = Py_BuildValue("d",wavenumsTarget[i]);
+		PyList_SetItem(wavenumsList, i, tempVal);
+	}
+	
+	PyObject* output = PyTuple_New(2);
+	if ( !(PyTuple_SetItem(output, 0, wavenumsList) == 0))
+		printf("Set output tuple 0 failed...");
+	if ( !(PyTuple_SetItem(output, 1, spectrumList) == 0))
+		printf("Set output tuple 1 failed...");
+		
 	free(spectrumTarget);
 	free(wavenumsTarget);
 	free(features);
-	return features_in;
+	return output;
 }
 
 // Our Module's Function Definition struct

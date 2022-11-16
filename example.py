@@ -20,9 +20,6 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
 
 import gaas as gs
-gs.gaasSimHTP([(1,1,1,1,1,1,1,1)],300,1,0.01,3000,4000)
-exit(0)
-
 import os
 import sys
 import matplotlib.pyplot as plt

@@ -1810,17 +1810,19 @@ extern "C"
 		float amM1 = molarMass;				   // molar mass
 		float M = amM1 * uma;  			      // mass of absorber in kg
 		float va0 = sqrt(2 * kb * tempK / M); // most probable speed of molecules with mass M
-
+		
 		//feature index
-		int i = blockIdx.x * threadsPerBlock + threadIdx.x;
-
+		int thread_ind = blockIdx.x * threadsPerBlock + threadIdx.x;
+		
+		//feature global variables
+		
 		//doppler width
-		double gammaD = VoigtLineshape::dopplerHWHM(database[i].linecenter, molarMass, tempK);
+		double gammaD = VoigtLineshape::dopplerHWHM(database[thread_ind].linecenter, molarMass, tempK);
 
-		// determine bounds (range in output array where the absorbance of this feature is non-negligible)
-		double maxHW = floatMax(gammaD, floatMax(database[i].Gam0, database[i].Gam2));
-		double minWavenum = database[i].linecenter - maxHW * WAVENUM_WING;
-		double maxWavenum = database[i].linecenter + maxHW * WAVENUM_WING;
+		// bounds
+		double maxHW = floatMax(gammaD, floatMax(database[thread_ind].Gam0, database[thread_ind].Gam2));
+		double minWavenum = database[thread_ind].linecenter - maxHW * WAVENUM_WING;
+		double maxWavenum = database[thread_ind].linecenter + maxHW * WAVENUM_WING;
 		int minInd = VoigtLineshape::toWavenumIndex(startWavenum, wavenumStep, minWavenum) + 1; //the +1 makes this equivalent to hapi
 		int maxInd = VoigtLineshape::toWavenumIndex(startWavenum, wavenumStep, maxWavenum);
 
@@ -1833,83 +1835,55 @@ extern "C"
 		{
 			maxInd = wavenumCount - 1;
 		}
-
-		thrust::complex<float> C0 = thrust::complex<float>(database[i].Gam0,database[i].Delta0);
-		thrust::complex<float> C2 = thrust::complex<float>(database[i].Gam2,database[i].Delta2);
-		thrust::complex<float> C0t = (1.0f - database[i].eta) * (C0 - 3.0f * C2 / 2.0f) + database[i].anuVC; //
-    	thrust::complex<float> C2t = (1.0f - database[i].eta) * C2; //
-		int N = maxInd-minInd;
 		
-		thrust::complex<float>* X = new thrust::complex<float>[N];
-		for(int i = 0; i < N; i++){
-			X[i] =  (thrust::complex<float>(0.0,1.0)*(database[i].linecenter - wavenums[minInd+i]) + C0t)/C2t; 
-		}
-
-		thrust::complex<float> temp = (database[i].linecenter * va0 / (2.0f * cl * C2t));
+		thrust::complex<float> C0 = thrust::complex<float>(database[thread_ind].Gam0,database[thread_ind].Delta0);
+		thrust::complex<float> C2 = thrust::complex<float>(database[thread_ind].Gam2,database[thread_ind].Delta2);
+		thrust::complex<float> C0t = (1.0f - database[thread_ind].eta) * (C0 - 3.0f * C2 / 2.0f) + database[thread_ind].anuVC; //
+    	thrust::complex<float> C2t = (1.0f - database[thread_ind].eta) * C2; //
+		thrust::complex<float> temp = (database[thread_ind].linecenter * va0 / (2.0f * cl * C2t));
 		thrust::complex<float> Y = temp*temp;
-
-		thrust::complex<float>* Zp = new thrust::complex<float>[N]; 
-		thrust::complex<float>* Zm = new thrust::complex<float>[N];
 		thrust::complex<float> sqrtY = temp;
 		thrust::complex<float> sqrtXY = 0;
-		
+
+		int N = maxInd-minInd;
+
+		//per wavenumber local variables
+		thrust::complex<float> X;
+		thrust::complex<float> Zp;
+		thrust::complex<float> Zm;
+		thrust::complex<float> FadZp;
+		thrust::complex<float> FadZm;
+		thrust::complex<float> BHTP; 
+		thrust::complex<float> AHTP;
+		thrust::complex<float> LineBot;
+
 		for(int i = 0; i < N; i++){
-			sqrtXY = sqrt(X[i] + Y);
-			Zm[i] = sqrtXY - sqrtY;
-			Zp[i] = sqrtXY + sqrtY;
-		}
+			X = (thrust::complex<float>(0.0,1.0)*(database[thread_ind].linecenter - wavenums[minInd+i]) + C0t)/C2t;
 
-		thrust::complex<float>* FadZp = new thrust::complex<float>[N]; 
-		thrust::complex<float>* FadZm = new thrust::complex<float>[N];
+			sqrtXY = sqrt(X + Y);
+			Zm = sqrtXY - sqrtY;
+			Zp = sqrtXY + sqrtY;
 
-		//compute fadeeva functions
-		for (int i = 0; i < N; i++)
-    	{
 			//FadZm
-			thrust::complex<float> arg = thrust::complex<float>(0, 1) * Zm[i];
+			thrust::complex<float> arg = thrust::complex<float>(0, 1) * Zm;
 			cuDoubleComplex argcdc = make_cuDoubleComplex(double(arg.real()),double(arg.imag()));
 			cuDoubleComplex rescdc = w(argcdc);
-    	    FadZm[i] = thrust::complex<float>(rescdc.x,rescdc.y);
+    	    FadZm = thrust::complex<float>(rescdc.x,rescdc.y);
 			
 			//FadZp
-			arg = thrust::complex<float>(0, 1) * Zp[i];
+			arg = thrust::complex<float>(0, 1) * Zp;
 			argcdc = make_cuDoubleComplex(double(arg.real()),double(arg.imag()));
 			rescdc = w(argcdc);
-    	    FadZp[i] = thrust::complex<float>(rescdc.x,rescdc.y);
-
-    	}
-
-		thrust::complex<float>* BHTP = new thrust::complex<float>[N];
-		thrust::complex<float>* AHTP = new thrust::complex<float>[N];
-
-		for (int i = 0; i < N; i++)
-		{
-			BHTP[i] = pow(va0, 2) / C2t * (-1 + SQRT_PI * (1 - pow(Zm[i], 2)) * FadZm[i] / (2 * sqrtY)
-				- SQRT_PI * (1 - pow(Zp[i], 2)) * FadZp[i] / (2 * sqrtY));
-			AHTP[i] = SQRT_PI * cl * (FadZm[i] - FadZp[i]) / (database[i].linecenter * va0);
-		}
-
-		thrust::complex<float>* LineBot = new thrust::complex<float>[N];
-
-		for (int i = 0; i < N; i++)
-		{
-			LineBot[i] = (1 - (database[i].anuVC - database[i].eta * (C0 - 3 * C2 / 2)) * AHTP[i] + (database[i].eta * C2 / pow(va0, 2)) * BHTP[i]);
-		}
-
-		for (int i = 0; i < N; i++)
-		{
-			float result = (1 / M_PI) * (AHTP[i] / LineBot[i]).real()*database[i].lineIntensity;
+    	    FadZp = thrust::complex<float>(rescdc.x,rescdc.y);
+			BHTP = pow(va0, 2) / C2t * (-1 + SQRT_PI * (1 - pow(Zm, 2)) * FadZm / (2 * sqrtY)
+				- SQRT_PI * (1 - pow(Zp, 2)) * FadZp / (2 * sqrtY));
+			
+			AHTP = SQRT_PI * cl * (FadZm - FadZp) / (database[thread_ind].linecenter * va0);
+			LineBot = (1 - (database[thread_ind].anuVC - database[thread_ind].eta * (C0 - 3 * C2 / 2)) * AHTP + (database[thread_ind].eta * C2 / pow(va0, 2)) * BHTP);
+			float result = (1 / M_PI) * (AHTP / LineBot).real()*database[thread_ind].lineIntensity;
 			atomicAdd(output+minInd+i,result);
 		}
 
-		delete[] X;
-		delete[] Zp;
-		delete[] Zm;
-		delete[] FadZp;
-		delete[] FadZm;
-		delete[] BHTP;
-		delete[] AHTP;
-		delete[] LineBot;
 	}
 	
 
@@ -1974,7 +1948,7 @@ extern "C"
 		} else {
 			padding = CUDA_THREADS_PER_BLOCK - (numberFeatures - (numberFeatures/CUDA_THREADS_PER_BLOCK)*CUDA_THREADS_PER_BLOCK); //numberFeatures % CUDA_THREADS_PER_BLOCK; // added so that kernel can run an integer # of cuda blocks
 		}
-														// feature database has padding added in when it is loaded, so the data is initialized
+		
 		// set device
 		cudaError_t cudaStatus;
 		cudaStatus = cudaSetDevice(0); //use first nvidia gpu, 
@@ -1990,7 +1964,7 @@ extern "C"
 		cudaStatus = cudaMalloc((void **)&dWavenums, numWavenums * sizeof(double));
 		gaas::checkCudaErrors(cudaStatus, "cudaMalloc Error");
 
-		// allocate device feature database
+		// allocate device feature database - the padding makes the number of features divisible by CUDA_THREADS_PER_BLOCK
 		featureDataHTP *d_featues;
 		cudaStatus = cudaMalloc((void **)&d_featues, (numberFeatures + padding) * sizeof(featureDataHTP));
 		gaas::checkCudaErrors(cudaStatus, "cudaMalloc Error");
@@ -2002,15 +1976,32 @@ extern "C"
 
 		// copy empty spectrum to device
 		cudaStatus = cudaMemcpy(dSpecTarget, spectrumTarget, numWavenums * sizeof(float), cudaMemcpyHostToDevice);
-		gaas::checkCudaErrors(cudaStatus, "cudaMemcpy Error");
+		gaas::checkCudaErrors(cudaStatus, "cudaMemcpy Error - initial spectrum");
 
 		// copy wavenums to device
 		cudaStatus = cudaMemcpy(dWavenums, wavenumsTarget, numWavenums * sizeof(double), cudaMemcpyHostToDevice);
-		gaas::checkCudaErrors(cudaStatus, "cudaMemcpy Error");
+		gaas::checkCudaErrors(cudaStatus, "cudaMemcpy Error - wavenums");
 
-		// copy feature database to device	   //tell cuda to only copy the features that will be used.
-		cudaStatus = cudaMemcpy(d_featues, (features + firstFeature), (numberFeatures + padding) * sizeof(featureDataHTP), cudaMemcpyHostToDevice);
-		gaas::checkCudaErrors(cudaStatus, "cudaMemcpy Error");
+		// copy feature database to device
+		cudaStatus = cudaMemcpy(d_featues, (features + firstFeature), (numberFeatures) * sizeof(featureDataHTP), cudaMemcpyHostToDevice);
+		gaas::checkCudaErrors(cudaStatus, "cudaMemcpy Error - feature data");
+		
+		//copy padding to GPU - this gives us an integer number of GPU thread batches
+		featureDataHTP* featurePadding = new featureDataHTP[padding];
+		for(int i = 0; i < padding; i++){
+			//set padding so that it has no effect on the output spectrum
+			featurePadding[i].anuVC=0;
+			featurePadding[i].Delta0=0;
+			featurePadding[i].Delta2=0;
+			featurePadding[i].eta=0;
+			featurePadding[i].Gam0=0;
+			featurePadding[i].Gam2=0;
+			featurePadding[i].linecenter=0;
+			featurePadding[i].lineIntensity=0;
+		}
+		cudaStatus = cudaMemcpy(d_featues+numberFeatures, (featurePadding), (padding) * sizeof(featureDataHTP), cudaMemcpyHostToDevice);
+		gaas::checkCudaErrors(cudaStatus, "cudaMemcpy Error - padding");
+		delete[] featurePadding;
 
 		Stopwatch sw = Stopwatch();
 		sw.start();
@@ -2022,7 +2013,7 @@ extern "C"
 		std::cout << "padding: " << padding << "\n";
 #endif
 		//double *wavenums, featureDataHTP *database, float *output, float tempK, float startWavenum, float wavenumStep, int wavenumCount, float molarMass, int threadsPerBlock)
-		gaas::HTPLineshape::lineshapeHTP<<<numBlocks, CUDA_THREADS_PER_BLOCK>>>(dWavenums,features,dSpecTarget,tempK,startWavenum,wavenumStep,numWavenums,molarMass,CUDA_THREADS_PER_BLOCK);
+		gaas::HTPLineshape::lineshapeHTP<<<numBlocks, CUDA_THREADS_PER_BLOCK>>>(dWavenums,d_featues,dSpecTarget,tempK,startWavenum,wavenumStep,numWavenums,molarMass,CUDA_THREADS_PER_BLOCK);
 
 		cudaStatus = cudaDeviceSynchronize();
 		double dt = sw.stop_time();
