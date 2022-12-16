@@ -35,7 +35,7 @@ import numpy as np
 WAVENUMBUFFER = 50
 
 
-def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory, ParDirectory, id, loadFromHITRAN=False):
+def init(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory, ParDirectory, id, loadFromHITRAN=False):
     """
     Generates absorption database related files in a compact binary format which allows GAAS binary to quickly
     load absorption parameters when running multiple simulations. Also loads a new TIPS file if there isnt one in the
@@ -52,7 +52,7 @@ def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory
     :return: void
     """
 
-    saveAbsorptionDB(moleculeID, isotopologueID, gaasDirectory+moleculeID+"_iso_"+str(isotopologueID)+"_"+id, max(
+    save_absorption_db(moleculeID, isotopologueID, gaasDirectory+moleculeID+"_iso_"+str(isotopologueID)+"_"+id, max(
         startWavenum-WAVENUMBUFFER, 0), max(endWavenum+WAVENUMBUFFER, 0), ParDirectory, loadFromHITRAN=loadFromHITRAN)
 
     # check for TIPS file in gaasDirectory.
@@ -67,7 +67,7 @@ def gaasInit(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory
         gt.generateTIPSFile(moleculeID, isotopologueID, gaasDirectory)
 
 
-def saveAbsorptionDB(moleculeID, isotopologueNum, filename, minWavenum, maxWavenum, hapiLocation, strengthCutoff=0, loadFromHITRAN=False):
+def save_absorption_db(moleculeID, isotopologueNum, filename, minWavenum, maxWavenum, hapiLocation, strengthCutoff=0, loadFromHITRAN=False):
     """
     Saves absorption database in a compact format which can be read by gaas executable
     :param moleculeID:  string of molecule of interest ex. 'H2O'
@@ -113,7 +113,7 @@ def saveAbsorptionDB(moleculeID, isotopologueNum, filename, minWavenum, maxWaven
     for i in range(len(absParamData)):
         filehandler.write(bytearray(struct.pack("<d", absParamData[i])))
 
-def gaasSimVoigt(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, gaasDir, moleculeID, isotopologueID, runID):
+def simVoigt(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, gaasDir, moleculeID, isotopologueID, runID):
     """
     runs simulation on GPU with 32 bit float precision
     suitable for older GPUs without support for atomicAdd(double *, double)  (Cuda architecture < 6.0 )
@@ -123,7 +123,7 @@ def gaasSimVoigt(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenu
     :param wavenumStep: wavenumbers between each simulation sample, higher wavenumStep = faster
     :param startWavenum: first wavenumber to simulate
     :param endWavenum: last wavenumber to simulate
-    :param gaasDir: gaas directory specified in gaasInit
+    :param gaasDir: gaas directory specified in init
     :param moleculeID: HITRAN Molecule ID
     :param runID: Use multiple run ids if you want to run different simulations at the same time (ie with different molecules or wavenumber ranges)
     :return: (spectrum : list, wavenums : list)
@@ -138,14 +138,15 @@ def gaasSimVoigt(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenu
     return (nus[buff:(len(nus)-buff+1)], coefs[buff:(len(coefs)-buff+1)])
 
 class HTPFeatureData:
-    #used to pass a list of feature data objects to gaasSimHTP
+    #used to pass a list of feature data objects to simHTP
     
     def __init__(self, linecenter: float, Gam0: float, Gam2: float, Delta0: float, Delta2: float, anuVC: float, eta: float, lineIntensity: float) -> None:
-        self.dataTuple = (linecenter,Gam0,Gam2,Delta0,Delta2,anuVC,eta,lineIntensity)
-    
+        self.dataList = [linecenter,Gam0,Gam2,Delta0,Delta2,anuVC,eta,lineIntensity]
 
+    def getDataTuple(self):
+        return (self.dataList[0],self.dataList[1],self.dataList[2],self.dataList[3],self.dataList[4],self.dataList[5],self.dataList[6],self.dataList[7])
 
-def gaasSimHTP(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum):
+def simHTP(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum):
     """
     Runs HTP simulation using GAAS, simulates each feature in features to produce an absorbance spectrum and wavenumber array
     :param features: list of HTPFeatureData objects
@@ -158,67 +159,6 @@ def gaasSimHTP(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum
     """
     features_arg = []
     for f in features:
-        features_arg.append(f.dataTuple)
+        features_arg.append(f.getDataTuple())
     
     return gaasAPI.sim_htp(features_arg, tempK, molarMass, wavenumStep, startWavenum, endWavenum)
-
-
-def runHAPI(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, moleculeID, isotopologueID, hapiDB):
-    """
-    Runs simulation using HAPI python library, for performace testing baseline
-    :param tempK:
-    :param pressureAtm:
-    :param conc:
-    :param wavenumStep:
-    :param startWavenum:
-    :param endWavenum:
-    :param moleculeID:
-    :return: (spectrum, wavenums)
-    """
-    # hapi.db_begin(hapiDB)
-    HITRAN_molecules = ['H2O', 'CO2', 'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3',
-                        'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl', 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2',
-                        'NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
-    molecule_number = (HITRAN_molecules.index(moleculeID)) + 1
-
-    nus, coefs = hapi.absorptionCoefficient_Voigt(Components=[(molecule_number, isotopologueID, conc)],
-                                                  SourceTables=moleculeID,
-                                                  Environment={
-                                                      'p': pressureAtm, 'T': tempK},
-                                                  Diluent={'self': conc,
-                                                           'air': 1 - conc},
-                                                  WavenumberRange=(
-                                                      startWavenum, endWavenum),
-                                                  WavenumberStep=wavenumStep, HITRAN_units=False)
-
-    return (nus, coefs)
-
-def runHAPI_HTP(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, moleculeID, isotopologueID, hapiDB):
-    """
-    Runs simulation using HAPI python library, for performace testing baseline
-    :param tempK:
-    :param pressureAtm:
-    :param conc:
-    :param wavenumStep:
-    :param startWavenum:
-    :param endWavenum:
-    :param moleculeID:
-    :return: (spectrum, wavenums)
-    """
-    # hapi.db_begin(hapiDB)
-    HITRAN_molecules = ['H2O', 'CO2', 'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3',
-                        'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl', 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2',
-                        'NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
-    molecule_number = (HITRAN_molecules.index(moleculeID)) + 1
-
-    nus, coefs = hapi.absorptionCoefficient_HT(Components=[(molecule_number, isotopologueID, conc)],
-                                                  SourceTables=moleculeID,
-                                                  Environment={
-                                                      'p': pressureAtm, 'T': tempK},
-                                                  Diluent={'self': conc,
-                                                           'air': 1 - conc},
-                                                  WavenumberRange=(
-                                                      startWavenum, endWavenum),
-                                                  WavenumberStep=wavenumStep, HITRAN_units=False)
-    return (nus, coefs)
-

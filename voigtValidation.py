@@ -29,6 +29,7 @@ import numpy as np
 import pandas as pd
 import time
 import hapi
+import hapiValidationFunctions as hpvf
 
 cwd = os.path.dirname(os.path.realpath(__file__))
 if sys.platform == 'win32' or sys.platform == 'win64':
@@ -53,21 +54,21 @@ def genError(T,P,conc,wavenumStep,startWavenum, endWavenum, mol, iso, gaasDir, i
     #generates error between HAPI and GAAS and returns execution time
 
     #for some reason the first run is always slower, so this just primes the GPU so that the timing is accurate for timed runs.
-    nus_g32,coefs_g32 = gs.gaasSimVoigt(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDir,mol,iso,id)
+    nus_g32,coefs_g32 = gs.simVoigt(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDir,mol,iso,id)
 
     print("Running GAAS 32")
     t1 = time.time()
-    nus_g32,coefs_g32 = gs.gaasSimVoigt(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDir,mol,iso,id)
+    nus_g32,coefs_g32 = gs.simVoigt(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDir,mol,iso,id)
     gTime32 = time.time() - t1
 
     print("Running GAAS 64")
     t1 = time.time()
-    nus_g64,coefs_g64 = gs.gaasSimVoigt(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDir,mol,iso,id)
+    nus_g64,coefs_g64 = gs.simVoigt(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDir,mol,iso,id)
     gTime64 = time.time() - t1
 
     print("Running HAPI")
     t1 = time.time()
-    nus_h,coefs_h = gs.runHAPI(T, P, conc, wavenumStep, startWavenum, endWavenum, mol, iso,cwd+'\\HTData')
+    nus_h,coefs_h = hpvf.runHAPI(T, P, conc, wavenumStep, startWavenum, endWavenum, mol, iso,cwd+'\\HTData')
     hTime = time.time() - t1
 
     return getError(nus_h,coefs_h,nus_g32,coefs_g32), getError(nus_h,coefs_h,nus_g64,coefs_g64), hTime, gTime32, gTime64
@@ -75,7 +76,7 @@ def genError(T,P,conc,wavenumStep,startWavenum, endWavenum, mol, iso, gaasDir, i
 def valSpecies(T, P, conc, res, iso, startWavenum, endWavenum, speciesList, gaasDirPath):
     out = []
     for species in speciesList:
-        #gs.gaasInit(startWavenum,endWavenum,species,iso,gaasDirPath,cwd+'HTData',"test",loadFromHITRAN=True)
+        #gs.init(startWavenum,endWavenum,species,iso,gaasDirPath,cwd+'HTData',"test",loadFromHITRAN=True)
         err32, err64, hTime, gTime32, gTime64 = genError(T,P,conc,res,startWavenum, endWavenum, species, iso, gaasDirPath)
         row = [P,T,conc,species,hTime,gTime32,gTime64,err32,err64]
         print(row)
@@ -86,7 +87,7 @@ def valSpecies(T, P, conc, res, iso, startWavenum, endWavenum, speciesList, gaas
 def valConcs(T, P, concs, res, iso, startWavenum, endWavenum, species, gaasDirPath):
     out = []
     for c in concs:
-        #gs.gaasInit(startWavenum,endWavenum,species,iso,gaasDirPath,cwd+'HTData',"test",loadFromHITRAN=True)
+        #gs.init(startWavenum,endWavenum,species,iso,gaasDirPath,cwd+'HTData',"test",loadFromHITRAN=True)
         err32, err64, hTime, gTime32, gTime64 = genError(T,P,c,res,startWavenum, endWavenum, species, iso, gaasDirPath)
         row = [P,T,c,species,hTime,gTime32,gTime64,err32,err64]
         print(row)
@@ -102,7 +103,7 @@ def genSpecVal():
     endWavenum = 5000
     wavenumStep = 0.0001 #wavenums per simulation step
     for s in species:
-        gs.gaasInit(startWavenum,endWavenum,s,1,gaasDirPath,cwd+'\\HTData',"test",loadFromHITRAN=True)
+        gs.init(startWavenum,endWavenum,s,1,gaasDirPath,cwd+'\\HTData',"test",loadFromHITRAN=True)
 
     iso = 1 #isotopologue num
     T = 300 #K
@@ -143,7 +144,7 @@ def genConcVal():
     startWavenum = 1000
     endWavenum = 5000
     wavenumStep = 0.0001 #wavenums per simulation step
-    gs.gaasInit(startWavenum,endWavenum,species,1,gaasDirPath,cwd+'\\HTData',"test",loadFromHITRAN=True)
+    gs.init(startWavenum,endWavenum,species,1,gaasDirPath,cwd+'\\HTData',"test",loadFromHITRAN=True)
 
     concs = np.linspace(0.01,0.9,10)
     iso = 1 #isotopologue num
@@ -201,7 +202,7 @@ def genTiming(T, Pressures, conc, wavenumStep, iso, startWavenum, endWavenums, s
     out = []
     for p in Pressures:
         for endWavenum in endWavenums:
-            gs.gaasInit(startWavenum,endWavenum,species,1,gaasDirPath,cwd+'\\HTDataWater',"test",loadFromHITRAN=False)
+            gs.init(startWavenum,endWavenum,species,1,gaasDirPath,cwd+'\\HTDataWater',"test",loadFromHITRAN=False)
             nlines = getNumLines(species,startWavenum-gs.WAVENUMBUFFER,endWavenum+gs.WAVENUMBUFFER)
             print("# lines", nlines)
             err32, err64, hTime, gTime32, gTime64 = genError(T,p,conc,wavenumStep,startWavenum, endWavenum, species, iso, gaasDirPath)
@@ -220,7 +221,7 @@ def genTPVal():
     wavenumStep = 0.001 #wavenums per simulation step
     iso = 1 #isotopologue num
     conc = 0.05
-    gs.gaasInit(startWavenum,endWavenum,species,1,gaasDirPath,cwd+'\\HTData',"test",loadFromHITRAN=True)
+    gs.init(startWavenum,endWavenum,species,1,gaasDirPath,cwd+'\\HTData',"test",loadFromHITRAN=True)
     temps = np.linspace(200,1500,10)
     pressures = np.linspace(.01,5,30)
     out = valTempPressure(temps,pressures,conc,wavenumStep,iso,startWavenum,endWavenum,species,gaasDirPath)
@@ -234,7 +235,7 @@ def runSpeedTests():
     iso = 1 #isotopologue num
     conc = 0.05
     hapi.db_begin(cwd+"/HTDataWater")
-    gs.gaasInit(startWavenum,endWavenum,species,1,gaasDirPath,cwd+'\\HTDataWater',"test",loadFromHITRAN=True)
+    gs.init(startWavenum,endWavenum,species,1,gaasDirPath,cwd+'\\HTDataWater',"test",loadFromHITRAN=True)
     endWavenums1 = np.linspace(startWavenum+20,startWavenum+(endWavenum-startWavenum)/10,10)
     endWavenums2 = np.linspace(startWavenum+20,endWavenum,10)
 
@@ -259,7 +260,7 @@ def mergeHITEMPFiles(orderedFileList, outfilename):
         f.close()
     outFile.close()
 
-#gs.gaasInit(1300,3500,'H2O',1,"C:/Users/Charlie/Desktop/HITEMP_DELETE_THIS/db/","C:/Users/Charlie/Desktop/HITEMP_DELETE_THIS/db/","test",loadFromHITRAN=False)
+#gs.init(1300,3500,'H2O',1,"C:/Users/Charlie/Desktop/HITEMP_DELETE_THIS/db/","C:/Users/Charlie/Desktop/HITEMP_DELETE_THIS/db/","test",loadFromHITRAN=False)
 # htd = "C:/Users/Charlie/Desktop/HITEMP_DELETE_THIS/"
 # files = [htd+"01_1300-1500_HITEMP2010.par",
 #         htd+"01_1500-1750_HITEMP2010.par",
@@ -274,7 +275,7 @@ def mergeHITEMPFiles(orderedFileList, outfilename):
 #initialize
 #hapi.db_begin(cwd+"/HTData")
 #for s in species:
-#    gs.gaasInit(startWavenum,endWavenum,s,1,gaasDirPath,cwd+'\\HTData',"test",loadFromHITRAN=False)
+#    gs.init(startWavenum,endWavenum,s,1,gaasDirPath,cwd+'\\HTData',"test",loadFromHITRAN=False)
 #genSpecVal()
 # genTPVal()
 genConcVal()

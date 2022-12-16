@@ -25,6 +25,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+import hapiValidationFunctions as hvf
 
 startWavenum = 7200
 endWavenum = 7600
@@ -58,17 +59,17 @@ if (not os.path.isdir(dbdir)):
 #initialize GAAS and create GAAS database file for the wavenumber range and molecule you want to simulate
 #This needs to be called once for each molecule/isotope you want to simulate.
 #Once GAAS binary files are generated, they can be re-used by different runs for the same molecule/isotope.
-gs.gaasInit(startWavenum,endWavenum,mol,iso,gaasDirPath,dbdir,"runTest",loadFromHITRAN=True)
+gs.init(startWavenum,endWavenum,mol,iso,gaasDirPath,dbdir,"runTest",loadFromHITRAN=True)
                            #(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, moleculeID)
 
 print("Running HAPI simulation...\n")
 t0 = time.time()
-nus_h,coefs_h = gs.runHAPI(T, P, conc, wavenumStep, startWavenum, endWavenum, mol, iso,'DBDir')
+nus_h,coefs_h = hvf.runHAPI(T, P, conc, wavenumStep, startWavenum, endWavenum, mol, iso,'DBDir')
 t0_h = time.time()
 
 t1 = time.time()
 
-nus, coefs = gs.gaasSimVoigt(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDirPath,mol,iso,"runTest")
+nus, coefs = gs.simVoigt(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDirPath,mol,iso,"runTest")
 
 print("GAAS sim time: ",time.time()-t1)
 print("HAPI sim time: ",t0_h-t0)

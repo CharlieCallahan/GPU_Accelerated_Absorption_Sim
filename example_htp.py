@@ -25,17 +25,30 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+import htpValidation as htpVal
 
 startWavenum = 7000
-endWavenum = 8000
-wavenumStep = 0.001 #wavenums per simulation step
+endWavenum = 80000
+wavenumStep = 0.005 #wavenums per simulation step
 molarMass = 1.0
 tempK = 300
 
-feat_wavenums = np.linspace(startWavenum,endWavenum,100)
+feat_wavenums = np.linspace(startWavenum,endWavenum,512000)
 feat_data = []
 for lc in feat_wavenums:
     feat_data.append(gs.HTPFeatureData(lc,0.1,0.1,0.1,0.1,0.1,0.1,1.0))
-wvn, spec = gs.gaasSimHTP(feat_data,tempK,molarMass,wavenumStep,startWavenum,endWavenum)
+t0 = time.time()
+wvn, spec = gs.simHTP(feat_data,tempK,molarMass,wavenumStep,startWavenum,endWavenum)
+gaasTime = time.time()-t0
+print("gaas time: ",gaasTime)
+
+t0=time.time()
+wvnh, spech = htpVal.hapiSimHTP(feat_data,tempK,molarMass,wavenumStep,startWavenum,endWavenum)
+hapiTime = time.time()-t0
+print("hapi time: ",hapiTime)
+print("GAAS is ",hapiTime/gaasTime, " times faster")
 plt.plot(spec)
+plt.plot(spech)
+plt.plot((spec-spech))
+plt.legend(("GAAS","HAPI","Residual"))
 plt.show()
