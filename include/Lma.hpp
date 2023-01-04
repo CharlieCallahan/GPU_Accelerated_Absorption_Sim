@@ -71,36 +71,14 @@ class LMVec{
  */
 class LMMat{
     public:
-    /**
-     * @brief Matrix-Matrix multiplication
-     * 
-     * @param mat 
-     * @return LMMat 
-     */
-    virtual LMMat* operator*( LMMat* mat) = 0;
 
     /**
-     * @brief Multiply by scalar in place
+     * @brief Calculate transpose(mat)*mat + lambda*IdentityMatrix
      * 
-     * @param scalar 
+     * @param lambda 
+     * @return LMMat* 
      */
-    virtual void scale(float scalar) = 0;
-
-    /**
-     * @brief Matrix - Matrix Addition
-     * 
-     * @param mat 
-     * @return LMMat 
-     */
-    virtual LMMat* operator+( LMMat* mat) = 0;
-
-    /**
-     * @brief Make identity matrix with the same size as this one
-     * 
-     * @return LMMat 
-     */
-    virtual LMMat* idMatLike()=0;
-
+    virtual LMMat* calcMTMpLambdaI(float lambda)=0;
     /**
      * @brief Transpose
      * 
