@@ -25,10 +25,31 @@
 #define LM_CUDA_THREADS_PER_BLOCK 128
 #include "Lma.hpp"
 #include "cuda_runtime.h"
-#include "device_launch_parameters.h
+#include "device_launch_parameters.h"
 #include <string>
 #include <iostream>
 #include "cusparse.h"
+
+/**
+ * @brief Cusparse context singleton object
+ * 
+ */
+class CuSparseContext{
+    public:
+    /**
+     * @brief Initialize cusparse context.
+     * 
+     */
+    CuSparseContext();
+
+    ~CuSparseContext(){
+        if (handle        ) cusparseDestroy(handle);
+        if (stream        ) cudaStreamDestroy(stream);
+    }
+    cusparseHandle_t handle;
+    cusparseStatus_t status = CUSPARSE_STATUS_SUCCESS;
+    cudaStream_t stream;
+};
 
 /**
  * @brief LMA Matrices and vectors implemented in CUDA
@@ -36,7 +57,8 @@
  */
 
 class CudaLMVec : public LMVec{
-
+    
+    public:
     /**
      * @brief Allocate on GPU and copy from CPU
      * 
@@ -88,23 +110,26 @@ class CudaLMVec : public LMVec{
 };
 
 class CudaLMMatSparse : public LMMat{
-
+    public:
     /**
      * @brief Construct a new Cuda LM Mat Sparse object
      * 
      * @param nnz number of nonzero elements 
      */
     CudaLMMatSparse(int nnz, int nRows, int nCols);
+    
+    CudaLMMatSparse(int nRows);
 
     ~CudaLMMatSparse();
 
-    
-    /**
-     * @brief Transpose
-     * 
-     * @return LMMat 
-     */
-    LMMat* transpose() override;
+    LMMat* calcMTMpLambdaI(float lambda) override;
+
+    // /**
+    //  * @brief Transpose
+    //  * 
+    //  * @return LMMat 
+    //  */
+    // LMMat* transpose() override;
 
     /**
      * @brief solves the linear equation A*x=b for x - (A is this matrix)
@@ -120,14 +145,19 @@ class CudaLMMatSparse : public LMMat{
      */
     LMVec* operator*( LMVec* vec) override;
 
+    static CuSparseContext* context;
+
     int nnz;
     int nRows;
     int nCols;
     float* d_csrValA;
     int* d_csrRowPtrA;
     int* d_csrColIndA;
+    cusparseMatDescr_t desc;
 
 };
+
+CuSparseContext* CudaLMMatSparse::context = new CuSparseContext();
 
 /**
  * @brief Helper functions
@@ -135,6 +165,8 @@ class CudaLMMatSparse : public LMMat{
  */
 namespace gpuHelpers
 {
+    void cuSparseConvertDenseToCSR(CuSparseContext* ctx, CudaLMMatSparse* emptyTarget, float* d_denseMat, int nCols, int nRows);
+
     void checkCudaErrors(cudaError_t &errorCode, std::string errorMessage, std::string srcFile, std::string srcLine);
 
     /**
@@ -179,6 +211,26 @@ namespace gpuHelpers
         int nRowsA,
         float* C_cmajor,
         float lambda);
+
+    /**
+     * @brief vec_out = A*vec_in, should be parallelized row wise : 1 row per thread
+     * 
+     * @param d_csrValA 
+     * @param d_csrRowPtrA 
+     * @param d_csrColIndA 
+     * @param nRowsA 
+     * @param vec_in 
+     * @param vec_out 
+     * @return __global__ 
+     */
+    __global__ void sparseMatVecMult(
+        float* d_csrValA,
+        int* d_csrRowPtrA,
+        int* d_csrColIndA,
+        int nRowsA,
+        float* vec_in,
+        float* vec_out
+    );
 
 
 } // namespace gpuHelpers

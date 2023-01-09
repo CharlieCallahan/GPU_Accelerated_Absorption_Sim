@@ -79,12 +79,6 @@ class LMMat{
      * @return LMMat* 
      */
     virtual LMMat* calcMTMpLambdaI(float lambda)=0;
-    /**
-     * @brief Transpose
-     * 
-     * @return LMMat 
-     */
-    virtual LMMat* transpose() = 0;
 
     /**
      * @brief solves the linear equation A*x=b for x - (A is this matrix)
@@ -100,9 +94,9 @@ class LMMat{
      */
     virtual LMVec* operator*( LMVec* vec)=0;
 
-
     virtual ~LMMat(){};
 };
+
 
 struct LMAFitSettings{
     int maxIterations = 100;
