@@ -71,14 +71,14 @@ class LMVec{
  */
 class LMMat{
     public:
-
+    
     /**
-     * @brief Calculate transpose(mat)*mat + lambda*IdentityMatrix
+     * @brief Calculate mat*transpose(mat) + lambda*IdentityMatrix
      * 
      * @param lambda 
      * @return LMMat* 
      */
-    virtual LMMat* calcMTMpLambdaI(float lambda)=0;
+    virtual LMMat* calcMMTpLambdaI(float lambda)=0;
 
     /**
      * @brief solves the linear equation A*x=b for x - (A is this matrix)
@@ -121,13 +121,23 @@ public:
     LMVec* fitBeta( LMVec& data, LMVec& betaGuess, LMAFitSettings& settings);
 
     /**
-     * @brief Get the jacobian 
+     * @brief Get the transposed jacobian 
+     * 
+     *               len(data)
+     *          _________________
+     *         | df_x0/dbeta_0, df_x1/dbeta_0 ... 
+     *         | df_x0/dbeta_1,
+     *         |    .
+     len(beta) |    .
+     *         |    .
+     *         |
+     *         |
+     * 
      * 
      * @param beta 
      * @return LMMat 
      */
-    virtual LMMat* getJacobian(LMVec& beta) = 0;
-
+    virtual LMMat* getTransposedJacobian(LMVec& beta) = 0;
 
     /**
      * @brief Evaluate the model at beta

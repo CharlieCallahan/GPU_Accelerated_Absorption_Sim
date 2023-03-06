@@ -101,6 +101,17 @@ LMVec* CudaLMVec::copy(){
     return newVec;
 }
 
+float* CudaLMVec::getCPUVec(){
+    float* cpuVec = new float[this->length];
+    cudaError_t cudaStatus = cudaMemcpy((void*)cpuVec, (void*)this->devicePtr, this->length*sizeof(float), cudaMemcpyDeviceToHost);
+	gpuHelpers::checkCudaErrors(cudaStatus, "cudaMemcpy Error ",std::string(__FILE__), std::to_string(__LINE__));
+    return cpuVec;
+}
+
+void CudaLMVec::destroyCPUVec(float* cpuVec){
+    delete[] cpuVec;
+}
+
 CudaLMVec::~CudaLMVec(){
     cudaError_t cudaStatus = cudaFree(this->devicePtr);
 	gpuHelpers::checkCudaErrors(cudaStatus, "cudaFree Error ",std::string(__FILE__), std::to_string(__LINE__));
@@ -192,7 +203,7 @@ CudaLMMatSparse::~CudaLMMatSparse(){
     cusparseDestroyMatDescr(desc);
 }
 
-LMMat* CudaLMMatSparse::calcMTMpLambdaI(float lambda){
+LMMat* CudaLMMatSparse::calcMMTpLambdaI(float lambda){
     float* d_C_Cmajor_dense; //device dense matrix result
 
     cudaError_t cudaStatus;
@@ -201,7 +212,7 @@ LMMat* CudaLMMatSparse::calcMTMpLambdaI(float lambda){
 
     int nBlocks = (this->nRows*this->nRows)/LM_CUDA_THREADS_PER_BLOCK + 1;
 
-    gpuHelpers::kernel_ATApluslambdaI<<<nBlocks, LM_CUDA_THREADS_PER_BLOCK>>>(this->d_csrValA,this->d_csrRowPtrA,this->d_csrColIndA,this->nRows,d_C_Cmajor_dense,lambda);
+    gpuHelpers::kernel_AATpluslambdaI<<<nBlocks, LM_CUDA_THREADS_PER_BLOCK>>>(this->d_csrValA,this->d_csrRowPtrA,this->d_csrColIndA,this->nRows,d_C_Cmajor_dense,lambda);
     
     CudaLMMatSparse* output = new CudaLMMatSparse(nRows);
 
@@ -254,15 +265,14 @@ LMVec* CudaLMMatSparse::solve(LMVec* b){
     return out_vec;
 }
 
-__global__ void gpuHelpers::kernel_ATApluslambdaI(
-        float* d_csrValA,
-        int* d_csrRowPtrA,
-        int* d_csrColIndA,
-        int nRowsA,
-        float* C_cmajor,
-        float lambda)
-{
-    //linear index
+__global__ void kernel_AATpluslambdaI(
+    float* d_csrValA,
+    int* d_csrRowPtrA,
+    int* d_csrColIndA,
+    int nRowsA,
+    float* C_cmajor,
+    float lambda){
+        //linear index
     int linear_ind = blockDim.x*blockIdx.x + threadIdx.x;
     if(linear_ind > (nRowsA*nRowsA-1)){ //out of bounds
         return;
@@ -280,20 +290,22 @@ __global__ void gpuHelpers::kernel_ATApluslambdaI(
 
     int di = endInd_i - startInd_i;
     int dj = endInd_j - startInd_j;
+
     int delta;
     int* smallerRow;
     int* largerRow;
     int lStartInd; //large start index
     int sStartInd; //smaller start index
     int largeMax; //max column index for larger row
-    if(di < dj){
+
+    if(di < dj){ //ith row is smaller
         delta = di;
         smallerRow = d_csrColIndA + startInd_i;
         largerRow = d_csrColIndA + startInd_j;
         sStartInd = startInd_i;
         lStartInd = startInd_j;
         largeMax = dj;
-    } else {
+    } else { //jth row is smaller
         delta = dj;
         smallerRow = d_csrColIndA + startInd_i;
         largerRow = d_csrColIndA + startInd_j;
@@ -309,16 +321,18 @@ __global__ void gpuHelpers::kernel_ATApluslambdaI(
 
     //this assumes that the csr column indices are sorted!
     int lOffset = 0; //offset into largerRow
-    for(int k = 0; k < delta; k++){
+    for(int k = 0; k < delta; k++){ //iterate over smaller row
         int sInd = smallerRow[k]; //currentSmallInd
         int lInd = largerRow[lOffset];
-        if(lInd == sInd){
+        if(lInd == sInd){ //indices match, continue
             sum+=(d_csrValA[lStartInd + lOffset]*d_csrValA[sStartInd + k]);
         } else {
+            //increase large index until it is at or above small index
             while(lInd < sInd && (lOffset < largeMax)){
                 lOffset++;
                 lInd = largerRow[lOffset];
             }
+
             if(lInd == sInd){
                 sum+=(d_csrValA[lStartInd + lOffset]*d_csrValA[sStartInd + k]);
             }

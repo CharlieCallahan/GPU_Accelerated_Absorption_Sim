@@ -100,6 +100,20 @@ class CudaLMVec : public LMVec{
      */
     LMVec* copy() override;
 
+    /**
+     * @brief Allocate a vector on the CPU to access the contents of this vector
+     * 
+     * @return float* 
+     */
+    float* getCPUVec();
+
+    /**
+     * @brief Destroy the cpu vec allocated in getCPUVec
+     * 
+     * @param cpuVec 
+     */
+    void destroyCPUVec(float* cpuVec);
+
     ~CudaLMVec();
 
     float* devicePtr;
@@ -122,7 +136,7 @@ class CudaLMMatSparse : public LMMat{
 
     ~CudaLMMatSparse();
 
-    LMMat* calcMTMpLambdaI(float lambda) override;
+    LMMat* calcMMTpLambdaI(float lambda) override;
 
     // /**
     //  * @brief Transpose
@@ -200,11 +214,11 @@ namespace gpuHelpers
     __global__ void kernel_vec_sum_sq(float* v0, float* target, int n);
 
     /**
-     * @brief C = transform(A)*A + lambda*I with A in sparse csr format and C in dense column major format
+     * @brief C = A*transpose(A) + lambda*I with A in sparse csr format and C in dense column major format
      * 
      * 
      */
-    __global__ void kernel_ATApluslambdaI(
+    __global__ void kernel_AATpluslambdaI(
         float* d_csrValA,
         int* d_csrRowPtrA,
         int* d_csrColIndA,

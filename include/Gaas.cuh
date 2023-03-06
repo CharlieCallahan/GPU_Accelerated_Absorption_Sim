@@ -252,20 +252,20 @@ extern "C"
 				void loadFeatDatabase(std::string databaseFilename);
 			};
 
-			__device__ double dopplerHWHM(double transWavenum, double molarMass, double tempKelvin);
+			__host__ __device__ double dopplerHWHM(double transWavenum, double molarMass, double tempKelvin);
 
 			__device__ double lorentzianHWHM(double tempK, double pressureAtm, double pSelf,
 											 double nAir, double gammaAir, double gammaSelf);
 
 			__device__ double lineStrength(double pSumT, double pSumTref, double refStrength, double ePrimePrime, double tempK, double transWavenum);
 
-			__device__ inline int toWavenumIndex(double startWavenum, double wavenumStep, double wavenumInput);
+			__host__ __device__ inline int toWavenumIndex(double startWavenum, double wavenumStep, double wavenumInput);
 
 			// main function for simulating lineshape.
 			__global__ void lineshapeVoigt(double *wavenums, featureDataVoigt *database, float *output, double tempK, double pressAtm, double conc, double tipsRef, double tipsTemp, double startWavenum, double wavenumStep, int wavenumCount, double molarMass, double isotopeAbundance, int threadsPerBlock);
 
 			//return the larger of the two values
-			__device__ float floatMax(float f1, float f2);
+			__host__ __device__ float floatMax(float f1, float f2);
 		}
 
 		namespace HTPLineshape

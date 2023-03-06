@@ -1726,7 +1726,7 @@ extern "C"
 		gaas::checkCudaErrors(cudaStatus, "cudaFree Error.");
 	}
 
-	__device__ double gaas::VoigtLineshape::dopplerHWHM(double transWavenum, double molarMass, double tempKelvin)
+	__host__ __device__ double gaas::VoigtLineshape::dopplerHWHM(double transWavenum, double molarMass, double tempKelvin)
 	{
 		// returns doppler HWHM given absorption parameters and temperature
 		double cMassMol = 1.66053873e-27;
@@ -1750,12 +1750,12 @@ extern "C"
 		return refStrength * pSumTref / pSumT * exp(-1 * c2 * ePrimePrime / tempK) / exp(-1 * c2 * ePrimePrime / Tref) * (1 - exp(-1 * c2 * transWavenum / tempK)) / (1 - exp(-1 * c2 * transWavenum / Tref));
 	}
 
-	__device__ int gaas::VoigtLineshape::toWavenumIndex(double startWavenum, double wavenumStep, double wavenumInput)
+	__host__ __device__ int gaas::VoigtLineshape::toWavenumIndex(double startWavenum, double wavenumStep, double wavenumInput)
 	{
 		return int((wavenumInput - startWavenum) / wavenumStep);
 	}
 
-	__device__ float floatMax(float f1, float f2){
+	__host__ __device__ float floatMax(float f1, float f2){
 		if(f1>f2){
 			return f1;
 		} else {
@@ -1818,7 +1818,6 @@ extern "C"
 		
 		//doppler width
 		double gammaD = VoigtLineshape::dopplerHWHM(database[thread_ind].linecenter, molarMass, tempK);
-
 		// bounds
 		double maxHW = floatMax(gammaD, floatMax(database[thread_ind].Gam0, database[thread_ind].Gam2));
 		double minWavenum = database[thread_ind].linecenter - maxHW * WAVENUM_WING;
@@ -1886,7 +1885,6 @@ extern "C"
 
 	}
 	
-
 	void simulateHTP(featureDataHTP* features, int numFeatures, float tempK, float molarMass, float *spectrumTarget, double *wavenumsTarget, double wavenumStep, double startWavenum, double endWavenum){
 		
 		if (endWavenum <= startWavenum)
