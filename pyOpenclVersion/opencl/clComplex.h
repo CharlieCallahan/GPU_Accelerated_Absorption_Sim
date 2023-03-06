@@ -1,5 +1,5 @@
-#ifndef CL_COMPLEX_H
-#define CL_COMPLEX_H
+#ifndef CLCOMPLEX_HPP
+#define CLCOMPLEX_HPP
 
 struct clComplex{
     // clComplex(double real, double cmplx){re=real;cmp=cmplx;}
@@ -63,4 +63,4 @@ struct clComplex clAdd(struct clComplex x, struct clComplex y){
     return make_clComplex(clReal(x) + clReal(y), clImag(x) + clImag(y));
 }
 
-#endif
+#endif /* CLCOMPLEX_HPP */

@@ -6,53 +6,43 @@ import pyopencl as cl
 import os
 import matplotlib.pyplot as plt
 
+class Gaas_OCL_API:
+    def __init__(self, oclDevice = None) -> None:
+        #init opencl program
+        # os.environ["PYOPENCL_CTX"] = '0:1'
+        # os.environ["PYOPENCL_NO_CACHE"] = '1'
+        
+        if(oclDevice == None):
+            platform = cl.get_platforms()
+            self.dev = platform[0].get_devices(device_type=cl.device_type.GPU)
+            print("GAAS OpenCL: Using ",self.dev)
+        else:
+            self.dev = oclDevice
 
-os.environ["PYOPENCL_CTX"] = '0:1'
-os.environ["PYOPENCL_NO_CACHE"] = '1'
+        self.ctx = cl.Context(devices=self.dev)
+        self.queue = cl.CommandQueue(ctx)
+        self.mf = cl.mem_flags
+        thisFilePath = os.path.realpath(os.path.dirname(__file__))
 
-ctx = cl.create_some_context()
-queue = cl.CommandQueue(ctx)
-mf = cl.mem_flags
+        try:
+            file = open(os.path.join(thisFilePath,"Gaas.c"))
+            srcStr = file.read()
+            file.close()
+        except IOError:
+            print("Failed to load opencl source files")
+            exit(-1)
 
-try:
-    file = open("Gaas.c")
-    srcStr = file.read()
-    file.close()
-except IOError:
-    print("Failed to load opencl source files")
-    exit(-1)
+        self.prg = cl.Program(self.ctx, srcStr)
+        self.prg.build(options="-I "+thisFilePath)
+        print(self.prg.get_build_info(self.ctx.devices[0],cl.program_build_info.LOG))
+        print(self.prg.get_info(cl.program_info.KERNEL_NAMES))
 
-# print(srcStr)
-
-prg = cl.Program(ctx, srcStr)
-# print("AAA")
-prg.build()
-print(prg.get_build_info(ctx.devices[0],cl.program_build_info.LOG))
-
-print(prg.all_kernels())
-
-mf = cl.mem_flags
-
-# print(prg.all)
-
-# print(prg.get_build_info(None,cl.program_build_info.LOG))
-
-print(prg.all_kernels())
-def runVoigtTest(wvn : np.array):
-    wvn = wvn.astype(np.float64)
-    wvn_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=wvn)
-    out_g = cl.Buffer(ctx, mf.WRITE_ONLY, wvn.nbytes)
-    knl = prg.voigtTest
-    # knl(queue,wvn.shape,None,wvn_g,out_g)
-
-    out_np = np.empty_like(wvn)
-    # cl.enqueue_copy(queue, out_np, out_g)
-    return out_np
-
-
-wvn = np.linspace(-5,5,100000)
-
-ret = runVoigtTest(wvn)
-
-plt.plot(wvn,ret)
-plt.show()
+    def runVoigtTest(self, wvn : np.array):
+        wvn = wvn.astype(np.float64)
+        wvn_g = cl.Buffer(self.ctx, self.mf.READ_ONLY | self.mf.COPY_HOST_PTR, hostbuf=wvn)
+        out_g = cl.Buffer(self.ctx, self.mf.WRITE_ONLY, wvn.nbytes)
+        knl = self.prg.voigtTest
+        knl(self.queue,wvn.shape,None,out_g,wvn_g)
+        out_np = np.empty_like(wvn)
+        cl.enqueue_copy(self.queue, out_np, out_g)
+        return out_np

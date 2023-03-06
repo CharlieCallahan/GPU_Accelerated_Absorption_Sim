@@ -48,8 +48,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef Gaas_h
-#define Gaas_h
+#ifndef GAAS_HPP
+#define GAAS_HPP
 
 #if defined(cl_khr_fp64)  // Khronos extension available?
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
@@ -243,4 +243,6 @@ void atomic_add_global(volatile __global double *source, const double operand);
 
 double doubleMax(double f1, double f2);
 
-#endif
+__kernel void voigtTest(__global double *output, __global const double *input);
+
+#endif /* GAAS_HPP */
