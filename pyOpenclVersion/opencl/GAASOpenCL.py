@@ -34,7 +34,8 @@ class Gaas_OCL_API:
 
         self.prg = cl.Program(self.ctx, srcStr)
         # os.environ['GMX_GPU_DISABLE_COMPATIBILITY_CHECK'] = '1'
-        self.prg.build(options="-I"+thisFilePath + " -w")
+        # print("AAAAA -I"+thisFilePath)
+        self.prg.build(options="-I ." + " -w")
         print(self.prg.get_build_info(self.ctx.devices[0],cl.program_build_info.LOG))
         print(self.prg.get_info(cl.program_info.KERNEL_NAMES))
 
@@ -47,3 +48,9 @@ class Gaas_OCL_API:
         out_np = np.empty_like(wvn)
         cl.enqueue_copy(self.queue, out_np, out_g)
         return out_np
+    
+api = Gaas_OCL_API()
+wvn = np.linspace(-10,10,10000)
+res = api.runVoigtTest(wvn)
+plt.plot(wvn,res)
+plt.show()
