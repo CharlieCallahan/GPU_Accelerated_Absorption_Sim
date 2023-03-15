@@ -52,18 +52,19 @@ class PlotWindow(QDialog):
         pg.setConfigOption('background', 'w')
         self.plot = pg.plot()
         self.plot.showGrid(x = True, y = True)
-        self.plot.setXRange(0, 10)       
+        self.plot.setLabel('left', "Absorbance")
+        self.plot.setLabel('bottom', "Wavenumber (cm-1)")
+
         # setting vertical range
-        self.plot.setYRange(0, 20)
         self.plot.addLegend()
 
         self.mainLayout.addWidget(self.plot,0,0)
         self.make_sliders()
 
-        self.startWavenum = 5000
-        self.endWavenum = 5600
+        self.startWavenum = 2000
+        self.endWavenum = 5000
         self.wavenumStep = 0.04 #wavenums per simulation step
-        self.mol = 'H2O' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
+        self.mol = 'NH3' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
         self.iso = 1 #isotopologue num
         cwd = os.path.dirname(os.path.realpath(__file__))
         if sys.platform == 'win32' or sys.platform == 'win64':
@@ -74,7 +75,7 @@ class PlotWindow(QDialog):
             #need to make database directory
             os.mkdir(dbdir)
 
-        self.absDB = gaas.gen_abs_db("H2O",self.iso,self.startWavenum,self.endWavenum,dbdir,loadFromHITRAN=True)
+        self.absDB = gaas.gen_abs_db(self.mol,self.iso,self.startWavenum,self.endWavenum,dbdir,loadFromHITRAN=True)
         self.tipsCalc = gaas.get_tips_calc(self.mol,self.iso)
         self.nus= np.zeros(100) 
         self.coefs = np.zeros(100)
