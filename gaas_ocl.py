@@ -36,6 +36,7 @@ WAVENUMBUFFER = 50
 
 g_api = gaasApi.Gaas_OCL_API()
 
+
 def init(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory, ParDirectory, id, loadFromHITRAN=False):
     """
     Generates absorption database related files in a compact binary format which allows GAAS binary to quickly
