@@ -1502,10 +1502,24 @@ int toWavenumIndex(double startWavenum, double wavenumStep, double wavenumInput)
 	return (int)((wavenumInput - startWavenum) / wavenumStep);
 }
 
-void lineshapeVoigt(__global double *wavenums, __global struct featureDataVoigt *database, __global double *output, double tempK, double pressAtm, double conc, double tipsRef, double tipsTemp, double startWavenum, double wavenumStep, int wavenumCount, double molarMass, double isotopeAbundance)
+__kernel void lineshapeVoigt(__global const double *wavenums,
+					__global const struct featureDataVoigt *database, 
+					__global double *output, 
+					double tempK, 
+					double pressAtm, 
+					double conc, 
+					double tipsRef, 
+					double tipsTemp, 
+					double startWavenum, 
+					double wavenumStep, 
+					int wavenumCount, 
+					double molarMass, 
+					double isotopeAbundance)
 {
 
 	int i = get_global_id(0);
+	// output[i] = i;
+	// return;
 	// compute voigt parameters:
 	double dopHWHM = dopplerHWHM(database[i].transWavenum, molarMass, tempK);
 	double lorHWHM = lorentzianHWHM(tempK, pressAtm, pressAtm * conc, database[i].nAir, database[i].gammaAir, database[i].gammaSelf);
@@ -1520,7 +1534,6 @@ void lineshapeVoigt(__global double *wavenums, __global struct featureDataVoigt 
 	int minInd = toWavenumIndex(startWavenum, wavenumStep, minWavenum) + 1; // the +1 makes this equivalent to hapi
 	int maxInd = toWavenumIndex(startWavenum, wavenumStep, maxWavenum);
 
-	// minInd = minInd * (minInd >= 0); //branchless (no 'if' statement) way to set minInd to zero if it is negative
 	if (minInd < 0)
 	{
 		minInd = 0;
@@ -1529,7 +1542,6 @@ void lineshapeVoigt(__global double *wavenums, __global struct featureDataVoigt 
 	{
 		maxInd = wavenumCount - 1;
 	}
-	// maxInd = maxInd * (maxInd < wavenumCount) + (wavenumCount-1)*(maxInd >= wavenumCount); //sets max ind to last element in wavenum array (also branchless)
 
 	// add lineshape to output
 	double currentVal;
@@ -1538,7 +1550,9 @@ void lineshapeVoigt(__global double *wavenums, __global struct featureDataVoigt 
 	{
 		adjWavenum = (wavenums[specInd] - (database[i].transWavenum + pressureShift));
 		currentVal = numDensity * conc / isotopeAbundance * strength * voigtSingle(adjWavenum, dopHWHM, lorHWHM);
-		atomic_add_global((output + specInd), currentVal);
+		// output[specInd] = currentVal;
+		// output[specInd] = output[specInd] + currentVal; 
+		atomic_add_d((output + specInd), currentVal);
 	}
 }
 
@@ -1553,21 +1567,22 @@ double doubleMax(double f1, double f2){
 }
 
 
-void atomic_add_global(volatile global double *source, const double operand)
-{
-    union {
-        unsigned int intVal;
-        double floatVal;
-    } newVal;
-    union {
-        unsigned int intVal;
-        double floatVal;
-    } prevVal;
-    do {
-        prevVal.floatVal = *source;
-        newVal.floatVal = prevVal.floatVal + operand;
-    } while (atomic_cmpxchg((volatile global unsigned int *)source, prevVal.intVal, newVal.intVal) != prevVal.intVal);
-}
+// void atomic_add_global(volatile global double *source, const double operand)
+// {
+//     union {
+//         unsigned int intVal;
+//         double floatVal;
+//     } newVal;
+//     union {
+//         unsigned int intVal;
+//         double floatVal;
+//     } prevVal;
+//     do {
+//         prevVal.floatVal = *source;
+//         newVal.floatVal = prevVal.floatVal + operand;
+//     } while (atomic_cmpxchg((volatile global unsigned int *)source, prevVal.intVal, newVal.intVal) != prevVal.intVal);
+// }
+
 
 // __kernel void lineshapeHTP(__global double *wavenums, 
 // 						   __global struct featureDataHTP *database, 

@@ -68,7 +68,6 @@ molecules = [' ','H2O','CO2','O3','N2O','CO','CH4','O2',
 niso = [0,9,13,18,5,9,4,6,3,4,2,2,2,3,2,4,4,2,2,6,3,2,3,3,2,1,3,3,1,
 2,1,3,1,1,1,2,1,2,3,1,2,4,1,1,6,2,4,1,2,2,3,1,5,4,2,1,1,1]
 
-
 # H2O
 Tmax = [0, 5000.,5000.,5000.,5000.,5000.,5000.,6000.,6000.,6000.,
 # CO2
@@ -145,6 +144,55 @@ def generateTIPSFile(moleculeName, isoNum, directory):
 				Q2 = float(QTdict[key])
 				QT = Q1+(Q2-Q1)*(T-int(T))
 			writer.writerow([T,QT])
-	
-		 
 
+class TIPsCalculator:
+
+	"""
+	A class for calculating the TIPs for a given molecule/isotopologue
+	"""
+	def __init__(self, molID, isoID) -> None:
+		mol = molecules.index(molID)
+		if not ((mol>0) and (mol<=57) and mol!=34): 
+			print("Error: generateTIPSFile: molecule: ", molID," not found.")
+			exit(-1)
+			
+		iso = isoID
+		if not (iso>0 and iso<=niso[mol]):
+			print("isotope # ",iso," out of range for molecule: ",molID)
+			print ('the range is',1,' to', niso[mol])
+			exit(-1)
+		
+		mol = str(mol)
+		iso = str(iso)
+		file = os.path.dirname(os.path.realpath(__file__)) + '/QTpy/'+mol+'_'+iso+'.QTpy'
+
+		QTdict = {}
+		with open(file, 'rb') as handle:
+			QTdict = pickle.loads(handle.read())
+
+		global_ID = 0
+		for I in range(1,int(mol)):
+			global_ID = global_ID + niso[I]
+		global_ID = global_ID + int(iso)
+
+		#dict for temp to Q lookup
+		self.Q = {}
+		for T in range(1,int(Tmax[global_ID])):
+			#iterate over temps
+			if(T==int(T)):
+				key=str(int(T))
+				QT = float(QTdict[key])
+			else:
+				key=str(int(T))
+				Q1 = float(QTdict[key])
+				key=str(int(T+1))
+				Q2 = float(QTdict[key])
+				QT = Q1+(Q2-Q1)*(T-int(T))
+			self.Q[T] = QT
+	
+	def getQ(self, temp):
+		T0 = int(temp)
+		T1 = T0+1
+		Q0 = self.Q[T0]
+		Q1 = self.Q[T1]
+		return Q0 + (Q1-Q0)*(temp-T0)

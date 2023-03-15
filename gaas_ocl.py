@@ -36,7 +36,6 @@ WAVENUMBUFFER = 50
 
 g_api = gaasApi.Gaas_OCL_API()
 
-
 def init(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory, ParDirectory, id, loadFromHITRAN=False):
     """
     Generates absorption database related files in a compact binary format which allows GAAS binary to quickly
@@ -68,14 +67,13 @@ def init(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory, Pa
         print("generating TIPS file")
         gt.generateTIPSFile(moleculeID, isotopologueID, gaasDirectory)
 
-def save_absorption_db(moleculeID, isotopologueNum, filename, minWavenum, maxWavenum, hapiLocation, strengthCutoff=0, loadFromHITRAN=False):
+def gen_abs_db(moleculeID, isotopologueNum, minWavenum, maxWavenum, parDirectory, strengthCutoff=0, loadFromHITRAN=False):
     """
     Saves absorption database in a compact format which can be read by gaas executable
     :param moleculeID:  string of molecule of interest ex. 'H2O'
-    :param filename: location to save gaas database
     :param minWavenum: min wavenum
     :param maxWavenum: max wavenum
-    :param hapiLocation: location of HITRAN .par files
+    :param parLocation: location of .par files
     :param strengthCutoff: minimum reference linestrength to include
     :param loadFromHITRAN: True= dowload data from HITRAN or False= Use current HITRAN database file in hapiLocation,
     :return: void
@@ -85,7 +83,7 @@ def save_absorption_db(moleculeID, isotopologueNum, filename, minWavenum, maxWav
 
     # This may not be necessary on every system
     ssl._create_default_https_context = ssl._create_unverified_context
-    hapi.db_begin(hapiLocation)
+    hapi.db_begin(parDirectory)
     if loadFromHITRAN:
         HITRAN_molecules = ['H2O', 'CO2', 'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3',
                             'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl', 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2', 'NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
@@ -96,28 +94,28 @@ def save_absorption_db(moleculeID, isotopologueNum, filename, minWavenum, maxWav
     hapi.describeTable(moleculeID)
     nu, n_air, gamma_air, gamma_self, sw, elower, deltaAir = hapi.getColumns(
         moleculeID, ['nu', 'n_air', 'gamma_air', 'gamma_self', 'sw', 'elower', 'delta_air'])
-    absParamData = []
 
+    out = np.empty_like(nu,dtype=g_api.getVoigtDBStructDatatype())
+    
     for i in range(len(nu)):
-        if (sw[i] >= strengthCutoff and nu[i] >= minWavenumAdj and nu[i] <= maxWavenumAdj):
-            absParamData.append(nu[i])
-            absParamData.append(n_air[i])
-            absParamData.append(gamma_air[i])
-            absParamData.append(gamma_self[i])
-            absParamData.append(sw[i])
-            absParamData.append(elower[i])
-            absParamData.append(deltaAir[i])
-    print("saving ", len(absParamData)/7, " lines.")
+        # t = out[i]
+        # if (sw[i] >= strengthCutoff and nu[i] >= minWavenumAdj and nu[i] <= maxWavenumAdj):
+        out[i]['transWavenum'] = nu[i]
+        out[i]['nAir'] = n_air[i]
+        out[i]['gammaAir'] = gamma_air[i]
+        out[i]['gammaSelf'] = gamma_self[i]
+        out[i]['refStrength'] = sw[i]
+        out[i]['ePrimePrime'] = elower[i]
+        out[i]['deltaAir'] = deltaAir[i]
 
-    # This file is formatted as a continuous array of gaas::linshapeSim::featureDataVoigt structs (see Gaas.cuh)
-    filehandler = open(filename, 'wb')
-    for i in range(len(absParamData)):
-        filehandler.write(bytearray(struct.pack("<d", absParamData[i])))
+    # print("saving ", len(absParamData)/7, " lines.")
+    return out
 
-def simVoigt(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, gaasDir, moleculeID, isotopologueID, runID):
+def get_tips_calc(moleculeID, isotopologueNum):
+    return gt.TIPsCalculator(moleculeID,isotopologueNum)
+
+def simVoigt(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, moleculeID, isotopologueID, absDB, tipsCalc):
     """
-    runs simulation on GPU with 32 bit float precision
-    suitable for older GPUs without support for atomicAdd(double *, double)  (Cuda architecture < 6.0 )
     :param tempK:
     :param pressureAtm:
     :param conc: molar concentration - pathlength is assumed to be 1cm, scale the spectra after to account for larger pathlength.
@@ -132,11 +130,22 @@ def simVoigt(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, g
     startWavenumAdj = max(startWavenum-WAVENUMBUFFER, 0)
     endWavenumAdj = max(endWavenum+WAVENUMBUFFER, 0)
 
-    #this calls the compiled GAAS module
-    nus, coefs = gaasAPI.sim_voigt(tempK, pressureAtm, conc, wavenumStep, startWavenumAdj,
-                                   endWavenumAdj, gaasDir, moleculeID, int(isotopologueID), runID)
+    wvn, a_coefs = g_api.voigtSim(
+                                absDB,
+                                tempK,
+                                pressureAtm,
+                                conc,
+                                tipsCalc.getQ(273),
+                                tipsCalc.getQ(tempK),
+                                startWavenumAdj,
+                                wavenumStep,
+                                endWavenumAdj,
+                                g_api.molMassMap[moleculeID+str(isotopologueID)],
+                                g_api.isoAbundanceMap[moleculeID+str(isotopologueID)])
+    
     buff = int(WAVENUMBUFFER/wavenumStep)
-    return (nus[buff:(len(nus)-buff+1)], coefs[buff:(len(coefs)-buff+1)])
+    # return (wvn[buff:(len(wvn)-buff+1)], a_coefs[buff:(len(a_coefs)-buff+1)])
+    return (wvn,a_coefs)
 
 class HTPFeatureData:
     #used to pass a list of feature data objects to simHTP
@@ -163,3 +172,5 @@ def simHTP(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum):
         features_arg.append(f.getDataTuple())
     
     return gaasAPI.sim_htp(features_arg, tempK, molarMass, wavenumStep, startWavenum, endWavenum)
+
+
