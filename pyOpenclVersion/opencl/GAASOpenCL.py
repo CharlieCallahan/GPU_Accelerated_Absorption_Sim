@@ -14,7 +14,7 @@ class Gaas_OCL_API:
         
         if(oclDevice == None):
             platform = cl.get_platforms()
-            self.dev = platform[0].get_devices(device_type=cl.device_type.GPU)
+            self.dev = platform[1].get_devices(device_type=cl.device_type.GPU)
             print("GAAS OpenCL: Using ",self.dev)
         else:
             self.dev = oclDevice
@@ -73,6 +73,7 @@ class Gaas_OCL_API:
 
         wvn_g = cl.Buffer(self.ctx, self.mf.READ_ONLY | self.mf.COPY_HOST_PTR, wvn_np.nbytes, hostbuf = wvn_np) #wvns
         abs_g = cl.Buffer(self.ctx, self.mf.WRITE_ONLY, wvn_np.nbytes) #absorbance
+        cl.enqueue_fill_buffer(self.queue,abs_g,np.float64(0),0,wvn_np.nbytes)
         db_g = cl.Buffer(self.ctx, self.mf.READ_ONLY | self.mf.COPY_HOST_PTR, featureDatabase.nbytes, hostbuf = featureDatabase) #feature DB
 
         knl = self.prg.lineshapeVoigt
@@ -92,10 +93,7 @@ class Gaas_OCL_API:
             np.float64(isoAbundance))
         
         abs_np = np.empty_like(wvn_np)
-        print("before: ",abs_np)
-
         cl.enqueue_copy(self.queue, abs_np, abs_g)
-        print(abs_np)
         return (wvn_np,abs_np)
 
     #maps molecule id to molar mass and isotope abundance
