@@ -68,7 +68,6 @@ def init(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory, Pa
         print("generating TIPS file")
         gt.generateTIPSFile(moleculeID, isotopologueID, gaasDirectory)
 
-
 def save_absorption_db(moleculeID, isotopologueNum, filename, minWavenum, maxWavenum, hapiLocation, strengthCutoff=0, loadFromHITRAN=False):
     """
     Saves absorption database in a compact format which can be read by gaas executable

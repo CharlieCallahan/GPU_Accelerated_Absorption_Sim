@@ -20,7 +20,7 @@ class Gaas_OCL_API:
             self.dev = oclDevice
 
         self.ctx = cl.Context(devices=self.dev)
-        self.queue = cl.CommandQueue(ctx)
+        self.queue = cl.CommandQueue(self.ctx)
         self.mf = cl.mem_flags
         thisFilePath = os.path.realpath(os.path.dirname(__file__))
 
@@ -33,7 +33,8 @@ class Gaas_OCL_API:
             exit(-1)
 
         self.prg = cl.Program(self.ctx, srcStr)
-        self.prg.build(options="-I "+thisFilePath)
+        # os.environ['GMX_GPU_DISABLE_COMPATIBILITY_CHECK'] = '1'
+        self.prg.build(options="-I"+thisFilePath + " -w")
         print(self.prg.get_build_info(self.ctx.devices[0],cl.program_build_info.LOG))
         print(self.prg.get_info(cl.program_info.KERNEL_NAMES))
 

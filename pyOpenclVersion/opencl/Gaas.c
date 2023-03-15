@@ -1462,7 +1462,7 @@ double voigtSingle(double x, double gaussianHWHM, double lorentzHWHM)
 	cmplx zDen = C(sigma * ROOT2, 0);
 	cmplx z = clDiv(zNum, zDen);
 	return creal(w(z)) / (sigma * ROOT2PI);
-	// return  w(z).real() / (sigma*ROOT2PI);
+	
 }
 
 __kernel void voigtTest(__global double *output, __global const double *input)
