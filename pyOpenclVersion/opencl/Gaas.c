@@ -1567,32 +1567,15 @@ double doubleMax(double f1, double f2){
 }
 
 
-// void atomic_add_global(volatile global double *source, const double operand)
-// {
-//     union {
-//         unsigned int intVal;
-//         double floatVal;
-//     } newVal;
-//     union {
-//         unsigned int intVal;
-//         double floatVal;
-//     } prevVal;
-//     do {
-//         prevVal.floatVal = *source;
-//         newVal.floatVal = prevVal.floatVal + operand;
-//     } while (atomic_cmpxchg((volatile global unsigned int *)source, prevVal.intVal, newVal.intVal) != prevVal.intVal);
-// }
-
-
 // __kernel void lineshapeHTP(__global double *wavenums, 
-// 						   __global struct featureDataHTP *database, 
-// 						   __global double *output, 
-// 						   double tempK, 
-// 						   double startWavenum, 
-// 						   double wavenumStep, 
-// 						   int wavenumCount, 
-// 						   double molarMass, 
-// 						   int threadsPerBlock)
+// 							__global struct featureDataHTP *database, 
+// 							__global double *output, 
+// 							double tempK, 
+// 							double startWavenum, 
+// 							double wavenumStep, 
+// 							int wavenumCount, 
+// 							double molarMass, 
+// 							int threadsPerBlock)
 // {
 // 	double cl = 299792458.f;				  // speed of light
 // 	double kb = 1.3806488e-23f;			  // Boltzmann constant

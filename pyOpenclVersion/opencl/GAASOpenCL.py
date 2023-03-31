@@ -5,6 +5,7 @@ import numpy as np
 import pyopencl as cl
 import os
 import matplotlib.pyplot as plt
+import pathlib
 
 class Gaas_OCL_API:
     def __init__(self, oclDevice = None) -> None:
@@ -35,7 +36,9 @@ class Gaas_OCL_API:
         self.prg = cl.Program(self.ctx, srcStr)
         # os.environ['GMX_GPU_DISABLE_COMPATIBILITY_CHECK'] = '1'
         # print("AAAAA -I"+thisFilePath)
-        self.prg.build(options="-I ." + " -w")
+        hdrSearchPath = os.path.dirname(os.path.abspath(__file__)).replace("\\","/")
+
+        self.prg.build(options="-I" + hdrSearchPath + " -w")
         print(self.prg.get_build_info(self.ctx.devices[0],cl.program_build_info.LOG))
         print(self.prg.get_info(cl.program_info.KERNEL_NAMES))
 

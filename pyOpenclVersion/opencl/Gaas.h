@@ -59,7 +59,7 @@
 #define DOUBLE_SUPPORT_AVAILABLE
 #endif
 
-#ifdef NOFP64
+#ifdef NOFP64 //this doesnt work - fp64 is required to get correct voigt simulations
 	#define double float
 #else
 	typedef double real_t;
@@ -213,17 +213,17 @@ __kernel void lineshapeVoigt(__global const double *wavenums,
 // return the larger of the two values
 double doubleMax(double f1, double f2);
 
-struct featureDataHTP
-{ //absorption feature database for HTP profile
-    double linecenter; //line center (wavenumber), 32b double only has ~7 decimals of precision, too low to accurately position line
-    double Gam0; //Gamma0
-    double Gam2; //Gamma2
-    double Delta0; //shift0
-    double Delta2; //shift2
-    double anuVC; //nuVC
-    double eta; //eta
-    double lineIntensity; //line intensity
-};
+// struct featureDataHTP
+// { //absorption feature database for HTP profile
+//     double linecenter; //line center (wavenumber), 32b double only has ~7 decimals of precision, too low to accurately position line
+//     double Gam0; //Gamma0
+//     double Gam2; //Gamma2
+//     double Delta0; //shift0
+//     double Delta2; //shift2
+//     double anuVC; //nuVC
+//     double eta; //eta
+//     double lineIntensity; //line intensity
+// };
 
 // __kernel void lineshapeHTP(__global double *wavenums, 
 // 							__global struct featureDataHTP *database, 
@@ -239,10 +239,6 @@ struct featureDataHTP
 struct clComplex w(struct clComplex z);
 
 double voigtSingle(double x, double gaussianHWHM, double lorentzHWHM);
-
-// void atomic_add_global(volatile __global double *source, const double operand);
-
-// void atomic_add_f(volatile global float* addr, const float val);
 
 void __attribute__((always_inline)) atomic_add_f(volatile global float* addr, const float val) {
     union {
