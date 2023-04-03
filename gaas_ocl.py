@@ -67,6 +67,10 @@ def init(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory, Pa
         print("generating TIPS file")
         gt.generateTIPSFile(moleculeID, isotopologueID, gaasDirectory)
 
+def getHITRANMolecules():
+    return ['H2O', 'CO2', 'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3',
+                            'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl', 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2', 'NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
+
 def gen_abs_db(moleculeID, isotopologueNum, minWavenum, maxWavenum, parDirectory, strengthCutoff=0, loadFromHITRAN=False):
     """
     Saves absorption database in a compact format which can be read by gaas executable
@@ -85,8 +89,8 @@ def gen_abs_db(moleculeID, isotopologueNum, minWavenum, maxWavenum, parDirectory
     ssl._create_default_https_context = ssl._create_unverified_context
     hapi.db_begin(parDirectory)
     if loadFromHITRAN:
-        HITRAN_molecules = ['H2O', 'CO2', 'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3',
-                            'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl', 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2', 'NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
+        HITRAN_molecules = getHITRANMolecules() 
+        
         molecule_number = (HITRAN_molecules.index(moleculeID)) + 1
         hapi.fetch(moleculeID, molecule_number,
                    isotopologueNum, minWavenumAdj-1, maxWavenumAdj+1,ParameterGroups=['160-char'])

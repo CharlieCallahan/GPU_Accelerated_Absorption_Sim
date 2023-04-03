@@ -1,10 +1,13 @@
 from PyQt5.QtCore import QDateTime, Qt, QTimer
+from PyQt5 import QtGui
+from PyQt5.QtGui import QMovie, QPainter
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
         QDial, QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
         QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
         QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
         QVBoxLayout, QWidget)
 
+import threading
 import pyqtgraph as pg
 import numpy as np
 import gaas_ocl as gaas
@@ -35,6 +38,106 @@ class FloatSlider(QWidget):
         sliderVal = self.slider.value()
         return self.min + sliderVal/1000*(self.max-self.min)
 
+from PyQt5 import QtWidgets, QtGui
+
+class FloatInput(QWidget):
+    def __init__(self, label_text="", default_value=0.0, parent=None):
+        super().__init__(parent)
+
+        # Create the label
+        self.label = QLabel(label_text)
+        
+        # Create the input box
+        self.input = QLineEdit(str(default_value))
+        self.input.returnPressed.connect(self._on_value_changed)
+        # Set the validator to allow only floating point numbers
+        validator = QtGui.QDoubleValidator()
+        validator.setNotation(QtGui.QDoubleValidator.StandardNotation)
+        self.input.setValidator(validator)
+        
+        # Set the layout
+        layout = QHBoxLayout(self)
+        layout.addWidget(self.label)
+        layout.addWidget(self.input)
+        
+        # Set the placeholder text to indicate the expected input format
+        self.input.setPlaceholderText('Enter a number')
+        
+    def get_value(self):
+        return float(self.input.text())
+    
+    def set_callback(self, func):
+        self.callback = func
+        
+    def _on_value_changed(self):
+        text = self.input.text()
+        if self.callback:
+            try:
+                value = float(text)
+            except ValueError:
+                value = None
+            self.callback(value)
+
+class LoadingWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        # Set up the layout and label
+        layout = QVBoxLayout()
+        self.label = QLabel(self)
+        self.label.setAlignment(Qt.AlignCenter)
+        # self.label.setFont(QFont("Arial", 16))
+        layout.addWidget(self.label)
+        self.setLayout(layout)
+
+        # Set up the timer and counter
+        self.timer = QTimer()
+        self.counter = 0
+        self.timer.timeout.connect(self.updateMessage)
+        self.start()
+
+    def start(self):
+        # Set the loading message and start the timer
+        self.label.setText("Loading")
+        # self.show()
+        self.timer.start(1000)
+
+    def stop(self):
+        # Stop the timer and hide the widget
+        self.timer.stop()
+        # self.hide()
+
+    def updateMessage(self):
+        # Update the loading message with ellipses
+        self.counter = (self.counter + 1) % 4
+        self.label.setText("Loading" + "." * self.counter)
+
+class DropdownMenu(QWidget):
+    def __init__(self, labels):
+        super().__init__()
+
+        # Create a label to display the selected value
+        self.selected_label = QLabel()
+        self.callback = None
+        # Create the dropdown menu
+        self.dropdown = QComboBox()
+        self.dropdown.addItems(labels)
+        self.dropdown.currentIndexChanged.connect(self.update_label)
+        self.labels = labels
+        # Set up the layout
+        layout = QVBoxLayout()
+        layout.addWidget(self.dropdown)
+        layout.addWidget(self.selected_label)
+        self.setLayout(layout)
+
+    def update_label(self, index):
+        # Update the selected label when the dropdown value is changed
+        self.selected_label.setText(f"Selected: {self.dropdown.currentText()}")
+        if(self.callback):
+            self.callback(self.labels[index])
+
+    def set_callback(self, callback):
+        self.callback = callback
 
 class PlotWindow(QDialog):
     def __init__(self, parent=None):
@@ -68,18 +171,36 @@ class PlotWindow(QDialog):
         self.iso = 1 #isotopologue num
         cwd = os.path.dirname(os.path.realpath(__file__))
         if sys.platform == 'win32' or sys.platform == 'win64':
-            dbdir = cwd + "\\DBDir\\"
+            self.dbdir = cwd + "\\DBDir\\"
         else:
             dbdir = cwd + "/DBDir/"
-        if (not os.path.isdir(dbdir)):
+        if (not os.path.isdir(self.dbdir)):
             #need to make database directory
-            os.mkdir(dbdir)
+            os.mkdir(self.dbdir)
 
-        self.absDB = gaas.gen_abs_db(self.mol,self.iso,self.startWavenum,self.endWavenum,dbdir,loadFromHITRAN=True)
+        self.minWvnEdit = FloatInput("min. Wavenum",self.startWavenum)
+        self.minWvnEdit.set_callback(self.updateMinWvn)
+        self.maxWvnEdit = FloatInput("max. Wavenum",self.endWavenum)
+        self.maxWvnEdit.set_callback(self.updateMaxWvn)
+
+        self.mainLayout.addWidget(self.minWvnEdit)
+        self.mainLayout.addWidget(self.maxWvnEdit)
+
+        self.absDB = gaas.gen_abs_db(self.mol,self.iso,self.startWavenum,self.endWavenum,self.dbdir,loadFromHITRAN=True)
+        self.dbLock = threading.Lock()
+
+        self.moleculeSelector = DropdownMenu(gaas.getHITRANMolecules())
+        self.moleculeSelector.set_callback(self.setMolecule)
+        self.mainLayout.addWidget(self.moleculeSelector)
+        
+        self.dbLoadingIcon = LoadingWidget()
+        self.mainLayout.addWidget(self.dbLoadingIcon)
+        self.dbLoadingIcon.hide()
         self.tipsCalc = gaas.get_tips_calc(self.mol,self.iso)
         self.nus= np.zeros(100) 
         self.coefs = np.zeros(100)
         self.updateSim()
+
 
     def update_plot(self):
         pen = pg.mkPen('r', width=3)
@@ -107,7 +228,34 @@ class PlotWindow(QDialog):
         
         self.nus,self.coefs = gaas.simVoigt(T,P,C,self.wavenumStep,self.startWavenum,self.endWavenum,self.mol,self.iso,self.absDB,self.tipsCalc)
 
+    def updateMinWvn(self,value : float):
+        print("AAAAAAAAAAAA")
+        self.startWavenum = value
+        self.reloadMoleculeDB()
+
+    def updateMaxWvn(self,value : float):
+        self.endWavenum = value
+        self.reloadMoleculeDB()
+
+    def reloadMoleculeDB(self):
+        self.dbThread = threading.Thread(target=self._reloadDBThread)
+        self.dbThread.start()
+
+    def _reloadDBThread(self):
+        self.dbLoadingIcon.show()
+        # self.dbLoadingIcon.start()
+        temp = gaas.gen_abs_db(self.mol,self.iso,self.startWavenum,self.endWavenum,self.dbdir,loadFromHITRAN=True)
+        self.dbLock.acquire()
+        self.absDB = temp
+        self.dbLock.release()
+        self.updateSim()
+        # self.dbLoadingIcon.stop()
+        self.dbLoadingIcon.hide()
     
+    def setMolecule(self,molID):
+        self.mol = molID
+        self.reloadMoleculeDB()
+
 if __name__ == '__main__':
 
     import sys
