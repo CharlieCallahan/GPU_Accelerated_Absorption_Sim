@@ -195,6 +195,9 @@ class PlotWindow(QDialog):
         
         self.dbLoadingIcon = LoadingWidget()
         self.mainLayout.addWidget(self.dbLoadingIcon)
+        self.numLinesLabel = QLabel()
+        self.numLinesLabel.setText("Num Lines: " + str(len(self.absDB)))
+        self.mainLayout.addWidget(self.numLinesLabel)
         self.dbLoadingIcon.hide()
         self.tipsCalc = gaas.get_tips_calc(self.mol,self.iso)
         self.nus= np.zeros(100) 
@@ -247,6 +250,7 @@ class PlotWindow(QDialog):
         temp = gaas.gen_abs_db(self.mol,self.iso,self.startWavenum,self.endWavenum,self.dbdir,loadFromHITRAN=True)
         self.dbLock.acquire()
         self.absDB = temp
+        self.numLinesLabel.setText("Num Lines: " + str(len(self.absDB)))
         self.dbLock.release()
         self.updateSim()
         # self.dbLoadingIcon.stop()
