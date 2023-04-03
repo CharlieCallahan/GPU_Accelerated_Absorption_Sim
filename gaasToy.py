@@ -167,7 +167,7 @@ class PlotWindow(QDialog):
         self.startWavenum = 2000
         self.endWavenum = 5000
         self.wavenumStep = 0.04 #wavenums per simulation step
-        self.mol = 'NH3' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
+        self.mol = 'H2O' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
         self.iso = 1 #isotopologue num
         cwd = os.path.dirname(os.path.realpath(__file__))
         if sys.platform == 'win32' or sys.platform == 'win64':
