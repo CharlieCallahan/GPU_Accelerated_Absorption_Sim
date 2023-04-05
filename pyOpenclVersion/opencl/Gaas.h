@@ -213,27 +213,26 @@ __kernel void lineshapeVoigt(__global const double *wavenums,
 // return the larger of the two values
 double doubleMax(double f1, double f2);
 
-// struct featureDataHTP
-// { //absorption feature database for HTP profile
-//     double linecenter; //line center (wavenumber), 32b double only has ~7 decimals of precision, too low to accurately position line
-//     double Gam0; //Gamma0
-//     double Gam2; //Gamma2
-//     double Delta0; //shift0
-//     double Delta2; //shift2
-//     double anuVC; //nuVC
-//     double eta; //eta
-//     double lineIntensity; //line intensity
-// };
+struct featureDataHTP
+{ //absorption feature database for HTP profile
+    double linecenter; //line center (wavenumber), 32b double only has ~7 decimals of precision, too low to accurately position line
+    double Gam0; //Gamma0
+    double Gam2; //Gamma2
+    double Delta0; //shift0
+    double Delta2; //shift2
+    double anuVC; //nuVC
+    double eta; //eta
+    double lineIntensity; //line intensity
+};
 
-// __kernel void lineshapeHTP(__global double *wavenums, 
-// 							__global struct featureDataHTP *database, 
-// 							__global double *output, 
-// 							double tempK, 
-// 							double startWavenum, 
-// 							double wavenumStep, 
-// 							int wavenumCount, 
-// 							double molarMass, 
-// 							int threadsPerBlock);
+__kernel void lineshapeHTP(__global double *wavenums, 
+							__global struct featureDataHTP *database, 
+							__global double *output, 
+							double tempK, 
+							double startWavenum, 
+							double wavenumStep, 
+							int wavenumCount, 
+							double molarMass);
 
 // fadeeva function
 struct clComplex w(struct clComplex z);

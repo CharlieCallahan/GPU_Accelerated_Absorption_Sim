@@ -142,7 +142,7 @@ class DropdownMenu(QWidget):
 class PlotWindow(QDialog):
     def __init__(self, parent=None):
         super(PlotWindow, self).__init__(parent)
-
+        self.setWindowTitle("GAAS GUI")
         self.originalPalette = QApplication.palette()
 
         self.mainLayout = QGridLayout()

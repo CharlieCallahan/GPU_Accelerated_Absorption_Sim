@@ -1567,96 +1567,128 @@ double doubleMax(double f1, double f2){
 }
 
 
-// __kernel void lineshapeHTP(__global double *wavenums, 
-// 							__global struct featureDataHTP *database, 
-// 							__global double *output, 
-// 							double tempK, 
-// 							double startWavenum, 
-// 							double wavenumStep, 
-// 							int wavenumCount, 
-// 							double molarMass, 
-// 							int threadsPerBlock)
-// {
-// 	double cl = 299792458.f;				  // speed of light
-// 	double kb = 1.3806488e-23f;			  // Boltzmann constant
-// 	double uma = 1.660538921e-27f;		  // atomic mass unit
-// 	double amM1 = molarMass;				  // molar mass
-// 	double M = amM1 * uma;				  // mass of absorber in kg
-// 	double va0 = sqrt(2 * kb * tempK / M); // most probable speed of molecules with mass M
+__kernel void lineshapeHTP(__global double *wavenums, 
+							__global struct featureDataHTP *database, 
+							__global double *output, 
+							double tempK, 
+							double startWavenum, 
+							double wavenumStep, 
+							int wavenumCount, 
+							double molarMass )
+{
+	double cl = 299792458.f;				  // speed of light
+	double kb = 1.3806488e-23f;			  // Boltzmann constant
+	double uma = 1.660538921e-27f;		  // atomic mass unit
+	double amM1 = molarMass;				  // molar mass
+	double M = amM1 * uma;				  // mass of absorber in kg
+	double va0 = sqrt(2 * kb * tempK / M); // most probable speed of molecules with mass M
 
-// 	// feature index
-// 	int thread_ind = get_global_id(0);
+	// feature index
+	int thread_ind = get_global_id(0);
 
-// 	// feature global variables
+	// feature global variables
 
-// 	// doppler width
-// 	double gammaD = dopplerHWHM(database[thread_ind].linecenter, molarMass, tempK);
+	// doppler width
+	double gammaD = dopplerHWHM(database[thread_ind].linecenter, molarMass, tempK);
 
-// 	// bounds
-// 	double maxHW = doubleMax(gammaD, doubleMax(database[thread_ind].Gam0, database[thread_ind].Gam2));
-// 	double minWavenum = database[thread_ind].linecenter - maxHW * WAVENUM_WING;
-// 	double maxWavenum = database[thread_ind].linecenter + maxHW * WAVENUM_WING;
-// 	int minInd = toWavenumIndex(startWavenum, wavenumStep, minWavenum) + 1; // the +1 makes this equivalent to hapi
-// 	int maxInd = toWavenumIndex(startWavenum, wavenumStep, maxWavenum);
+	// bounds
+	double maxHW = doubleMax(gammaD, doubleMax(database[thread_ind].Gam0, database[thread_ind].Gam2));
+	double minWavenum = database[thread_ind].linecenter - maxHW * WAVENUM_WING;
+	double maxWavenum = database[thread_ind].linecenter + maxHW * WAVENUM_WING;
+	int minInd = toWavenumIndex(startWavenum, wavenumStep, minWavenum) + 1; // the +1 makes this equivalent to hapi
+	int maxInd = toWavenumIndex(startWavenum, wavenumStep, maxWavenum);
 
-// 	// clamps indices to the edges
-// 	if (minInd < 0)
-// 	{
-// 		minInd = 0;
-// 	}
-// 	if (maxInd >= wavenumCount)
-// 	{
-// 		maxInd = wavenumCount - 1;
-// 	}
+	// clamps indices to the edges
+	if (minInd < 0)
+	{
+		minInd = 0;
+	}
+	if (maxInd >= wavenumCount)
+	{
+		maxInd = wavenumCount - 1;
+	}
 
-// 	cmplx C0 = C(database[thread_ind].Gam0, database[thread_ind].Delta0);
-// 	cmplx C2 = C(database[thread_ind].Gam2, database[thread_ind].Delta2);
+	cmplx C0 = C(database[thread_ind].Gam0, database[thread_ind].Delta0);
+	cmplx C2 = C(database[thread_ind].Gam2, database[thread_ind].Delta2);
 
-// 	// cmplx C0t = (1.0f - database[thread_ind].eta) * (C0 - 3.0f * C2 / 2.0f) + database[thread_ind].anuVC; 
-// 	cmplx C0t = clAdd(clMul(C(1.0f - database[thread_ind].eta,0), clSub(C0, clMul(C(3.0f/2.0f,0),C2))), C(database[thread_ind].anuVC,0));
 
-// 	cmplx C2t = (1.0f - database[thread_ind].eta) * C2;												   
-// 	cmplx temp = (database[thread_ind].linecenter * va0 / (2.0f * cl * C2t));
-// 	cmplx Y = temp * temp;
-// 	cmplx sqrtY = temp;
-// 	cmplx sqrtXY = 0;
 
-// 	int N = maxInd - minInd;
+	// cmplx C0t = (1.0f - database[thread_ind].eta) * (C0 - 3.0f * C2 / 2.0f) + database[thread_ind].anuVC; 
+	cmplx C0t = clAdd(clMul(C(1.0f - database[thread_ind].eta,0), clSub(C0, clMul(C(3.0f/2.0f,0),C2))), C(database[thread_ind].anuVC,0));
+	cmplx C2t = clMul(C(1.0f - database[thread_ind].eta,0), C2);
 
-// 	// per wavenumber local variables
-// 	cmplx X;
-// 	cmplx Zp;
-// 	cmplx Zm;
-// 	cmplx FadZp;
-// 	cmplx FadZm;
-// 	cmplx BHTP;
-// 	cmplx AHTP;
-// 	cmplx LineBot;
+	//			 (database[thread_ind].linecenter * va0 / (2.0f * cl * C2t));
+	cmplx temp = clDiv(C((database[thread_ind].linecenter * va0),0), clMul(C(2.0f * cl,0), C2t));
+	cmplx Y = clMul(temp,temp);
+	cmplx sqrtY = temp;
+	cmplx sqrtXY = C(0,0);
 
-// 	for (int i = 0; i < N; i++)
-// 	{
-// 		X = (thrust::complex<double>(0.0, 1.0) * (database[thread_ind].linecenter - wavenums[minInd + i]) + C0t) / C2t;
+	int N = maxInd - minInd;
 
-// 		sqrtXY = sqrt(X + Y);
-// 		Zm = sqrtXY - sqrtY;
-// 		Zp = sqrtXY + sqrtY;
+	// per wavenumber local variables
+	cmplx X;
+	cmplx Zp;
+	cmplx Zm;
+	cmplx FadZp;
+	cmplx FadZm;
+	cmplx BHTP_1;
+	cmplx BHTP_2;
+	cmplx BHTP_3;
+	cmplx BHTP;
+	cmplx AHTP;
+	cmplx LineBot1;
+	cmplx LineBot2;
+	cmplx LineBot;
 
-// 		// FadZm
-// 		thrust::complex<double> arg = thrust::complex<double>(0, 1) * Zm;
-// 		cmplx argcdc = C(double(arg.real()), double(arg.imag()));
-// 		cmplx rescdc = w(argcdc);
-// 		FadZm = thrust::complex<double>(rescdc.x, rescdc.y);
+	for (int i = 0; i < N; i++)
+	{
+		
+		//X = (thrust::complex<float>(0.0,1.0)*(database[thread_ind].linecenter - wavenums[minInd+i]) + C0t)/C2t;
+		X = clDiv(clAdd(clMul(C(0.0f,1.0f),C(database[thread_ind].linecenter - wavenums[minInd+i],0)),C0t),C2t);
+		
+		sqrtXY = clSqrt(clAdd(X,Y));
+		// Zm = sqrtXY - sqrtY;
+		Zm = clSub(sqrtXY, sqrtY);
+		// Zp = sqrtXY + sqrtY;
+		Zp = clAdd(sqrtXY, sqrtY);
 
-// 		// FadZp
-// 		arg = thrust::complex<double>(0, 1) * Zp;
-// 		argcdc = C(double(arg.real()), double(arg.imag()));
-// 		rescdc = w(argcdc);
-// 		FadZp = thrust::complex<double>(rescdc.x, rescdc.y);
-// 		BHTP = pow(va0, 2) / C2t * (-1 + SQRT_PI * (1 - pow(Zm, 2)) * FadZm / (2 * sqrtY) - SQRT_PI * (1 - pow(Zp, 2)) * FadZp / (2 * sqrtY));
+		// FadZm
+		// thrust::complex<double> arg = thrust::complex<double>(0, 1) * Zm;
+		cmplx arg = clMul(C(0.0f,1.0f),Zm);
+		cmplx argcdc = C(clReal(arg), clImag(arg));
+		cmplx rescdc = w(argcdc);
+		FadZm = C(clReal(rescdc), clImag(rescdc));
 
-// 		AHTP = SQRT_PI * cl * (FadZm - FadZp) / (database[thread_ind].linecenter * va0);
-// 		LineBot = (1 - (database[thread_ind].anuVC - database[thread_ind].eta * (C0 - 3 * C2 / 2)) * AHTP + (database[thread_ind].eta * C2 / pow(va0, 2)) * BHTP);
-// 		double result = (1 / M_PI) * (AHTP / LineBot).real() * database[thread_ind].lineIntensity;
-// 		atomicAdd(output + minInd + i, result);
-// 	}
-// }
+		// FadZp
+		arg = clMul(C(0.0f, 1.0f) , Zp);
+		argcdc = C(clReal(arg), clImag(arg));
+		rescdc = w(argcdc);
+		FadZp = C(clReal(rescdc), clImag(rescdc));
+
+		//need to break this up 
+		// BHTP = pow(va0, 2) / C2t * (-1 + SQRT_PI * (1 - pow(Zm, 2)) * FadZm / (2 * sqrtY) - SQRT_PI * (1 - pow(Zp, 2)) * FadZp / (2 * sqrtY));
+		// BHTP_1 = pow(va0, 2) / C2t
+		// BHTP_2 = SQRT_PI * (1 - pow(Zm, 2)) * FadZm / (2 * sqrtY)
+		// BHTP_3 = SQRT_PI * (1 - pow(Zp, 2)) * FadZp / (2 * sqrtY)
+		// BHTP = BHTP_1 * (-1 + BHTP_2 - BHTP_3);
+		BHTP_1 =  clDiv(C(va0*va0,0),C2t);
+		BHTP_2 =  clMul(clMul(C(SQRT_PI,0),clSub(C(1.0f,0),clMul(Zm,Zm))),clDiv(FadZm,clMul(C(2.0f,0),sqrtY)));
+		BHTP_3 =  clMul(clMul(C(SQRT_PI,0),clSub(C(1.0f,0),clMul(Zp,Zp))),clDiv(FadZp,clMul(C(2.0f,0),sqrtY)));
+		BHTP = clMul(BHTP_1,clAdd(C(-1.0f,0.0f),clSub(BHTP_2,BHTP_3))); 
+
+		// AHTP = SQRT_PI * cl * (FadZm - FadZp) / (database[thread_ind].linecenter * va0);
+		AHTP = clDiv(clMul(C(SQRT_PI*cl,0.0),clSub(FadZm,FadZp)),C(database[thread_ind].linecenter * va0,0));
+
+
+		// LineBot = 1 - (database[thread_ind].anuVC - database[thread_ind].eta * (C0 - 3 * C2 / 2)) * AHTP + (database[thread_ind].eta * C2 / pow(va0, 2)) * BHTP;
+		// LineBot = 1 - LineBot1 + LineBot2;
+		// LineBot1 = (database[thread_ind].anuVC - database[thread_ind].eta * (C0 - 3 * C2 / 2) ) * AHTP
+		// LineBot2 = (database[thread_ind].eta * C2 / pow(va0, 2)) * BHTP
+		LineBot1 = clMul(clSub(C(database[thread_ind].anuVC,0), clMul(C(database[thread_ind].eta,0),clSub(C0,clMul(C(3.0/2.0,0.0),C2)) ) ),AHTP);
+		LineBot2 = clMul(clMul(C(database[thread_ind].eta,0.0),clDiv(C2,C(va0*va0,0))),BHTP);
+		LineBot = clAdd(clSub(C(1.0,0.0),LineBot1),LineBot2);
+		// double result = (1 / M_PI) * (AHTP / LineBot).real() * database[thread_ind].lineIntensity;
+		double result = (1 / M_PI) * clReal(clDiv(AHTP , LineBot)) * database[thread_ind].lineIntensity;
+		atomic_add_d((output + minInd + i), result);
+	}
+}
