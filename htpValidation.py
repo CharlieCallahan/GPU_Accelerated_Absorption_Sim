@@ -33,7 +33,7 @@ def hapiSimHTP(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum
     spectrum = np.zeros_like(wavenums)
 
     for feat in features:
-        (linecenter,Gam0,Gam2,Delta0,Delta2,anuVC,eta,lineIntensity) = feat.dataTuple
+        (linecenter,Gam0,Gam2,Delta0,Delta2,anuVC,eta,lineIntensity) = feat.getDataTuple()
         gammaD = dopplerHWHM(linecenter,molarMass,tempK)
         maxHW = max(gammaD,Gam0,Gam2)
         minWvn = linecenter-maxHW*50

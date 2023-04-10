@@ -160,7 +160,7 @@ class HTPFeatureData:
     def getDataTuple(self):
         return (self.dataList[0],self.dataList[1],self.dataList[2],self.dataList[3],self.dataList[4],self.dataList[5],self.dataList[6],self.dataList[7])
 
-def simHTP(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum):
+def simHTP_legacy(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum):
     """
     Runs HTP simulation using GAAS, simulates each feature in features to produce an absorbance spectrum and wavenumber array
     :param features: list of HTPFeatureData objects
@@ -171,10 +171,29 @@ def simHTP(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum):
     :param endWavenum: wavenumber range end
     :return: (spectrum, wavenums)
     """
-    features_arg = []
-    for f in features:
-        features_arg.append(f.getDataTuple())
+    htp_dbtype = g_api.getHTPDBStructDatatype()
+    dbArray = np.empty(len(features),dtype=htp_dbtype)
+# [('transWavenum','<f8'),
+#     ('Gam0','<f8'),
+#     ('Gam2','<f8'),
+#     ('Delta0','<f8'),
+#     ('Delta2','<f8'),
+#     ('anuVC','<f8'),
+#     ('eta','<f8'),
+#     ('lineIntensity','<f8')]
+
+
+# [linecenter,Gam0,Gam2,Delta0,Delta2,anuVC,eta,lineIntensity]
+    for i in range(len(features)):
+        dbArray[i]['transWavenum'] = features[i].dataList[0]
+        dbArray[i]['Gam0'] =         features[i].dataList[1]
+        dbArray[i]['Gam2'] =         features[i].dataList[2]
+        dbArray[i]['Delta0'] =       features[i].dataList[3]
+        dbArray[i]['Delta2'] =       features[i].dataList[4]
+        dbArray[i]['anuVC'] =        features[i].dataList[5]
+        dbArray[i]['eta'] =          features[i].dataList[6]
+        dbArray[i]['lineIntensity'] =features[i].dataList[7]
     
-    return gaasAPI.sim_htp(features_arg, tempK, molarMass, wavenumStep, startWavenum, endWavenum)
+    return g_api.HTPSim(dbArray,tempK,startWavenum,wavenumStep,endWavenum,molarMass)
 
 

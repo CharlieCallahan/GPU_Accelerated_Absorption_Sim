@@ -1567,8 +1567,8 @@ double doubleMax(double f1, double f2){
 }
 
 
-__kernel void lineshapeHTP(__global double *wavenums, 
-							__global struct featureDataHTP *database, 
+__kernel void lineshapeHTP(__global  const double *wavenums, 
+							__global const struct featureDataHTP *database, 
 							__global double *output, 
 							double tempK, 
 							double startWavenum, 

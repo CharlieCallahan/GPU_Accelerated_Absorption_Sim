@@ -261,9 +261,7 @@ class PlotWindow(QDialog):
         self.reloadMoleculeDB()
 
 if __name__ == '__main__':
-
     import sys
-
     app = QApplication(sys.argv)
     gallery = PlotWindow()
     gallery.show()

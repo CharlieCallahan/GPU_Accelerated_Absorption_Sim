@@ -58,6 +58,19 @@ class Gaas_OCL_API:
         """
         return [('transWavenum','<f8'),('nAir','<f8'),('gammaAir','<f8'),('gammaSelf','<f8'),('refStrength','<f8'),('ePrimePrime','<f8'),('deltaAir','<f8')]
     
+    def getHTPDBStructDatatype(self):
+        """
+            Returns the HTP feature database numpy data structure which is compatible with the OpenCL code
+        """
+        return [('transWavenum','<f8'),
+                ('Gam0','<f8'),
+                ('Gam2','<f8'),
+                ('Delta0','<f8'),
+                ('Delta2','<f8'),
+                ('anuVC','<f8'),
+                ('eta','<f8'),
+                ('lineIntensity','<f8')]
+    
     def voigtSim(self, 
                 featureDatabase : np.array,
                 temp : float,
@@ -94,6 +107,38 @@ class Gaas_OCL_API:
             np.int32(wvn_np.size),
             np.float64(molarMass),
             np.float64(isoAbundance))
+        
+        abs_np = np.empty_like(wvn_np)
+        cl.enqueue_copy(self.queue, abs_np, abs_g)
+        return (wvn_np,abs_np)
+    
+    def HTPSim( self, 
+                featureDatabase : np.array,
+                temp : float,
+                wvnStart : float,
+                wvnStep : float,
+                wvnEnd : float,
+                molarMass : float
+                ):
+        
+        wvn_np  = np.arange(wvnStart,wvnEnd,wvnStep).astype(np.float64)
+
+        wvn_g = cl.Buffer(self.ctx, self.mf.READ_ONLY | self.mf.COPY_HOST_PTR, wvn_np.nbytes, hostbuf = wvn_np) #wvns
+        abs_g = cl.Buffer(self.ctx, self.mf.WRITE_ONLY, wvn_np.nbytes) #absorbance
+
+        cl.enqueue_fill_buffer(self.queue,abs_g,np.float64(0),0,wvn_np.nbytes)
+        db_g = cl.Buffer(self.ctx, self.mf.READ_ONLY | self.mf.COPY_HOST_PTR, featureDatabase.nbytes, hostbuf = featureDatabase) #feature DB
+
+        knl = self.prg.lineshapeHTP
+        knl(self.queue,featureDatabase.shape,None,
+            wvn_g,
+            db_g,
+            abs_g,
+            np.float64(temp),
+            np.float64(wvnStart),
+            np.float64(wvnStep),
+            np.int32(wvn_np.size),
+            np.float64(molarMass))
         
         abs_np = np.empty_like(wvn_np)
         cl.enqueue_copy(self.queue, abs_np, abs_g)

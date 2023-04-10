@@ -225,8 +225,8 @@ struct featureDataHTP
     double lineIntensity; //line intensity
 };
 
-__kernel void lineshapeHTP(__global double *wavenums, 
-							__global struct featureDataHTP *database, 
+__kernel void lineshapeHTP(__global const double *wavenums, 
+							__global const struct featureDataHTP *database, 
 							__global double *output, 
 							double tempK, 
 							double startWavenum, 
