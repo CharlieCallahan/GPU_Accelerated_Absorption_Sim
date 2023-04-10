@@ -15,6 +15,7 @@ class Gaas_OCL_API:
         
         if(oclDevice == None):
             platform = cl.get_platforms()
+            # self.dev = platform[1].get_devices(device_type=cl.device_type.GPU) #use integrated GPU on 2 GPU computers
             self.dev = platform[0].get_devices(device_type=cl.device_type.GPU)
             print("GAAS OpenCL: Using ",self.dev)
         else:
