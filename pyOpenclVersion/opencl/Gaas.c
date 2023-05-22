@@ -22,7 +22,7 @@
 
 // voigt profile functions (everything in namespace faadeeva) is copied over
 // from http://ab-initio.mit.edu/Faddeeva and modified to
-// compile as a cuda kernel.
+// compile as a GPU kernel.
 
 // faadeeva MIT Lisence
 

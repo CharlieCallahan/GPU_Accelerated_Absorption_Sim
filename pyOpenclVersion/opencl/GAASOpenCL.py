@@ -83,11 +83,11 @@ class Gaas_OCL_API:
                 wvnStep : float,
                 wvnEnd : float,
                 molarMass : float,
-                isoAbundance : float
+                isoAbundance : float,
+                wvnGrid = None
                 ):
         
         wvn_np  = np.arange(wvnStart,wvnEnd,wvnStep).astype(np.float64)
-
         wvn_g = cl.Buffer(self.ctx, self.mf.READ_ONLY | self.mf.COPY_HOST_PTR, wvn_np.nbytes, hostbuf = wvn_np) #wvns
         abs_g = cl.Buffer(self.ctx, self.mf.WRITE_ONLY, wvn_np.nbytes) #absorbance
         cl.enqueue_fill_buffer(self.queue,abs_g,np.float64(0),0,wvn_np.nbytes)

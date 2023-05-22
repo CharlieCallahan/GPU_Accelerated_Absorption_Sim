@@ -30,11 +30,10 @@ import htpValidation as htpVal
 
 startWavenum = 7000
 endWavenum = 80000
-wavenumStep = 0.005 #wavenums per simulation step
+wavenumStep = 0.05 #wavenums per simulation step
 molarMass = 1.0
 tempK = 300
-
-feat_wavenums = np.linspace(startWavenum,endWavenum,1000000)
+feat_wavenums = np.linspace(startWavenum,endWavenum,10)
 feat_data = []
 for lc in feat_wavenums:
     feat_data.append(gs.HTPFeatureData(lc,0.1,0.1,0.1,0.1,0.1,0.1,1.0))
