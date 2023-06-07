@@ -114,9 +114,9 @@ def gen_abs_db(moleculeID, isotopologueNum, minWavenum, maxWavenum, parDirectory
         out[i]['deltaAir'] = deltaAir[i]
 
     #remove existing cache item 
-    for i in range(len(abs_db_cache)-1,-1,-1):
+    for i, val  in reversed(list(enumerate(abs_db_cache))):
         if(abs_db_cache[i][0]==moleculeID and abs_db_cache[i][1]==isotopologueNum):
-            abs_db_cache.remove(i) #this is safe since we are iterating from end to beginning
+            del abs_db_cache[i]
     
     abs_db_cache.append((moleculeID,isotopologueNum,minWavenum,maxWavenum,out))
     return out
@@ -166,7 +166,7 @@ def simVoigt(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, m
                                 tempK,
                                 pressureAtm,
                                 conc,
-                                tipsCalc.getQ(273),
+                                tipsCalc.getQ(296),
                                 tipsCalc.getQ(tempK),
                                 startWavenumAdj,
                                 wavenumStep,
@@ -175,8 +175,8 @@ def simVoigt(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, m
                                 g_api.isoAbundanceMap[moleculeID+str(isotopologueID)])
     
     buff = int(WAVENUMBUFFER/wavenumStep)
-    # return (wvn[buff:(len(wvn)-buff+1)], a_coefs[buff:(len(a_coefs)-buff+1)])
-    return (wvn,a_coefs)
+    return (wvn[buff:(len(wvn)-buff+1)], a_coefs[buff:(len(a_coefs)-buff+1)])
+    # return (wvn,a_coefs)
 
 def db_begin_gaas(parDirectory):
     gaas_par_directory = parDirectory
@@ -241,6 +241,7 @@ def absorptionCoefficient_Voigt_gaas(Components=None,SourceTables=None,partition
                     'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl', 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2',
                     'NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
     
+    WavenumberGrid = OmegaGrid
     if(WavenumberGrid is None):
         if(WavenumberStep is not None):
             wavenumStep = WavenumberStep
