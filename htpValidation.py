@@ -2,6 +2,9 @@ import hapi
 import gaas_ocl as gs
 import numpy as np
 import time
+import random
+import pandas as pd
+import os
 
 def getError(nus_h,coefs_h,nus_g,coefs_g): #gets percent error
     err = 0
@@ -61,7 +64,7 @@ def hapiSimHTP(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum
             spectrum[ind]+=val
     return wavenums,spectrum
 
-def getErrorHTP(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum) :
+def getErrorHTP(features : list[gs.HTPFeatureData], tempK : float, molarMass : float, wavenumStep : float , startWavenum: float, endWavenum : float) :
 
     print("Running GAAS HTP")
     t1 = time.time()
@@ -76,3 +79,66 @@ def getErrorHTP(features, tempK, molarMass, wavenumStep, startWavenum, endWavenu
     err = getError(nus_h,coefs_h,wvn_gs,abs_gs)
     return err, hTime, gTime
     
+class randomFeatGenerator:
+    def __init__(self, seed : int) -> None:
+        random.seed(seed)
+        self.min_val = 0.001
+        self.max_val = 0.1
+
+    def genFeatures(self, startWavenum : float, endWavenum : float, nFeatures: int) -> list[gs.HTPFeatureData]:
+        feat_data = []
+        for i in range(nFeatures):
+            lc = random.uniform(startWavenum,endWavenum)
+            Gam0 = random.uniform(self.min_val,self.max_val)
+            Gam2 = random.uniform(self.min_val,self.max_val)
+            Delta0 = random.uniform(self.min_val,self.max_val)
+            Delta2 = random.uniform(self.min_val,self.max_val)
+            anuVC = random.uniform(self.min_val,self.max_val)
+            eta = random.uniform(self.min_val,self.max_val)
+            lineIntensity = random.uniform(self.min_val,self.max_val)
+            feat_data.append(gs.HTPFeatureData(lc,Gam0,Gam2,Delta0,Delta2,anuVC,eta,lineIntensity))
+        return feat_data
+    
+def runRandValidation(numFeatures: int, numRuns: int) -> pd.DataFrame:
+    featureSets = []
+    startWvn = 2000
+    endWvn = 6000
+    wvnStep = 0.001
+    seed = 1
+    featGen = randomFeatGenerator(seed)
+    #gen features
+    for i in range(numRuns):
+        featureSets.append(featGen.genFeatures(startWvn,endWvn,numFeatures))
+
+    out = []
+    for i in range(numRuns):
+        err, hTime, gTime = getErrorHTP(featureSets[i], 300, 1.0, wvnStep, startWvn, endWvn)
+        out.append([err,hTime,gTime])
+    outpd = pd.DataFrame(out, columns=["error %","HAPITime","gaasTime"])
+
+    return outpd
+    
+def runSpeedTest(maxFeats: int, numRuns: int, randSeed:int):
+    startWvn = 2000
+    endWvn = 6000
+    wvnStep = 0.001
+    featGen = randomFeatGenerator(randSeed)
+    nfeats = np.arange(1,maxFeats,maxFeats/numRuns)
+    feats = []
+    for n in nfeats:
+        feats.append(featGen.genFeatures(startWvn,endWvn,n))
+
+    out = []
+    for i in range(feats):
+        err, hTime, gTime = getErrorHTP(feats[i], 300, 1.0, wvnStep, startWvn, endWvn)
+        out.append([len(feats[i]),err,hTime,gTime])
+
+    outpd = pd.DataFrame(out, columns=["numFeats","error %","HAPITime","gaasTime"])
+    return outpd
+    
+def runAll():
+    cwd = os.path.dirname(os.path.realpath(__file__))
+    randValRes = runRandValidation(512, 20)
+    randValRes.to_csv(cwd+"\\Validation\\htp_rand_val.csv")
+    speedValRes = runSpeedTest(512, 20, 1)
+    speedValRes.to_csv(cwd+"\\Validation\\htp_speed_val.csv")
