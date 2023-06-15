@@ -11,12 +11,29 @@ class Gaas_OCL_API:
     def __init__(self, oclDevice = None) -> None:
         #init opencl program
         # os.environ["PYOPENCL_CTX"] = '0:1'
-        # os.environ["PYOPENCL_NO_CACHE"] = '1'
-        
+        # os.environ["GAAS_OCL_DEVICE"] = '1' #use this to change to a different opencl device - a different gpu if you have a multi gpu system
+        # os.environ["GAAS_OCL_DEVICE_TYPE"] = 'GPU' or 'CPU' #use this to change to a cpu - defaults to GPU if nothing is specified
+        pyopenCLDevice = 0
+        pyopenCLDeviceType = 'GPU'
+        if os.getenv("GAAS_OCL_DEVICE") is not None:
+            pyopenCLDevice = int(os.getenv("GAAS_OCL_DEVICE"))
+
+        if os.getenv('GAAS_OCL_DEVICE_TYPE') is not None:
+            pyopenCLDeviceType = os.getenv('GAAS_OCL_DEVICE_TYPE')
+            if(pyopenCLDeviceType == 'CPU'):
+                pyopenCLDeviceType = 'CPU'
+                print("Using CPU as openCL device")
+            elif pyopenCLDeviceType != 'GPU':
+                print("Invalid device type: ",pyopenCLDeviceType, " defaulting to GPU")
+            
         if(oclDevice == None):
             platform = cl.get_platforms()
             # self.dev = platform[1].get_devices(device_type=cl.device_type.GPU) #use integrated GPU on 2 GPU computers
-            self.dev = platform[0].get_devices(device_type=cl.device_type.GPU)
+            if(pyopenCLDeviceType == 'CPU'):
+                self.dev = platform[pyopenCLDevice].get_devices(device_type=cl.device_type.CPU)
+            else:
+                self.dev = platform[pyopenCLDevice].get_devices(device_type=cl.device_type.GPU)
+
             print("GAAS OpenCL: Using ",self.dev)
         else:
             self.dev = oclDevice

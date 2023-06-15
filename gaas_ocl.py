@@ -274,8 +274,6 @@ def absorptionCoefficient_Voigt_gaas(Components=None,SourceTables=None,partition
 
     return nus, coefs_summed
 
-
-
 class HTPFeatureData:
     #used to pass a list of feature data objects to simHTP
     

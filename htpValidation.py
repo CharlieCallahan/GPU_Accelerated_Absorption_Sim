@@ -1,6 +1,16 @@
 import hapi
-import gaas
+import gaas_ocl as gs
 import numpy as np
+import time
+
+def getError(nus_h,coefs_h,nus_g,coefs_g): #gets percent error
+    err = 0
+    sum = 0
+    length = min(len(coefs_g),len(coefs_h))
+    for i in range(length):
+        err+=abs(coefs_h[i]-coefs_g[i])
+        sum+=coefs_h[i]
+    return err/sum*100 #%
 
 def hapiSimHTP(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum):
     """
@@ -50,3 +60,19 @@ def hapiSimHTP(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum
             val = lineIntensity*hapi.PROFILE_HT(linecenter,gammaD,Gam0,Gam2,Delta0,Delta2,anuVC,eta,wvn,Ylm=0.0)[0]
             spectrum[ind]+=val
     return wavenums,spectrum
+
+def getErrorHTP(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum) :
+
+    print("Running GAAS HTP")
+    t1 = time.time()
+    (wvn_gs,abs_gs) = gs.simHTP_legacy(features,tempK,molarMass,wavenumStep,startWavenum,endWavenum)
+    gTime = time.time() - t1
+
+    print("Running HAPI")
+    t1 = time.time()
+    nus_h,coefs_h = hapiSimHTP(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum)
+    hTime = time.time() - t1
+
+    err = getError(nus_h,coefs_h,wvn_gs,abs_gs)
+    return err, hTime, gTime
+    
