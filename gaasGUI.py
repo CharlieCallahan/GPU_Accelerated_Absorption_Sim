@@ -232,7 +232,6 @@ class PlotWindow(QDialog):
         self.nus,self.coefs = gaas.simVoigt(T,P,C,self.wavenumStep,self.startWavenum,self.endWavenum,self.mol,self.iso,self.absDB,self.tipsCalc)
 
     def updateMinWvn(self,value : float):
-        print("AAAAAAAAAAAA")
         self.startWavenum = value
         self.reloadMoleculeDB()
 

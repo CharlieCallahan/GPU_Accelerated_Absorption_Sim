@@ -68,7 +68,7 @@ def getErrorHTP(features : list[gs.HTPFeatureData], tempK : float, molarMass : f
 
     print("Running GAAS HTP")
     t1 = time.time()
-    (wvn_gs,abs_gs) = gs.simHTP_legacy(features,tempK,molarMass,wavenumStep,startWavenum,endWavenum)
+    (wvn_gs,abs_gs) = gs.simHTP(features,tempK,molarMass,wavenumStep,startWavenum,endWavenum)
     gTime = time.time() - t1
 
     print("Running HAPI")

@@ -38,7 +38,7 @@ feat_data = []
 for lc in feat_wavenums:
     feat_data.append(gs.HTPFeatureData(lc,0.1,0.1,0.1,0.1,0.1,0.1,1.0))
 t0 = time.time()
-wvn, spec = gs.simHTP_legacy(feat_data,tempK,molarMass,wavenumStep,startWavenum,endWavenum)
+wvn, spec = gs.simHTP(feat_data,tempK,molarMass,wavenumStep,startWavenum,endWavenum)
 gaasTime = time.time()-t0
 plt.plot(wvn,spec)
 plt.show()

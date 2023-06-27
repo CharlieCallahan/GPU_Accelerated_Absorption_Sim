@@ -283,7 +283,7 @@ class HTPFeatureData:
     def getDataTuple(self):
         return (self.dataList[0],self.dataList[1],self.dataList[2],self.dataList[3],self.dataList[4],self.dataList[5],self.dataList[6],self.dataList[7])
 
-def simHTP_legacy(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum):
+def simHTP(features, tempK, molarMass, wavenumStep, startWavenum, endWavenum):
     """
     Runs HTP simulation using GAAS, simulates each feature in features to produce an absorbance spectrum and wavenumber array
     :param features: list of HTPFeatureData objects
@@ -319,8 +319,8 @@ def simHTP_legacy(features, tempK, molarMass, wavenumStep, startWavenum, endWave
     
     return g_api.HTPSim(dbArray,tempK,startWavenum,wavenumStep,endWavenum,molarMass)
 
-def simHTP(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, moleculeID, isotopologueID, absDB, tipsCalc):
-    return
+# def simHTP(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, moleculeID, isotopologueID, absDB, tipsCalc):
+#     return
 
 def gen_abs_db_ht(moleculeID, isotopologueNum, minWavenum, maxWavenum, parDirectory, strengthCutoff=0, loadFromHITRAN=False):
     """
