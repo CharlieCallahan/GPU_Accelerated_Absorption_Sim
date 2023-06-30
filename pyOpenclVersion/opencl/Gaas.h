@@ -186,6 +186,14 @@ struct featureDataVoigt
 	double deltaAir;
 };
 
+struct featureDataVoigtRaw
+{	//for simulating voigt profiles using the raw lineshape parameters
+	double integratedArea;
+	double transWavenum;
+	double gammaD; //doppler (gaussian) broadening (HWHM)
+	double gamma0; //lorenzian broadening (HWHM)
+};
+
 double dopplerHWHM(double transWavenum, double molarMass, double tempKelvin);
 
 double lorentzianHWHM(double tempK, double pressureAtm, double pSelf,
@@ -209,6 +217,13 @@ __kernel void lineshapeVoigt(__global const double *wavenums,
 							int wavenumCount, 
 							double molarMass, 
 							double isotopeAbundance);
+
+__kernel void lineshapeVoigt_raw(__global const double *wavenums,
+							__global const struct featureDataVoigtRaw *features, 
+							__global double *output, 
+							double startWavenum, 
+							double wavenumStep, 
+							int wavenumCount);
 
 // return the larger of the two values
 double doubleMax(double f1, double f2);

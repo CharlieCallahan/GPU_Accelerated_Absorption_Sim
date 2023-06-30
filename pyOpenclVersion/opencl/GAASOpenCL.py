@@ -53,7 +53,6 @@ class Gaas_OCL_API:
 
         self.prg = cl.Program(self.ctx, srcStr)
         # os.environ['GMX_GPU_DISABLE_COMPATIBILITY_CHECK'] = '1'
-        # print("AAAAA -I"+thisFilePath)
         hdrSearchPath = os.path.dirname(os.path.abspath(__file__)).replace("\\","/")
 
         self.prg.build(options="-I" + hdrSearchPath + " -w")
@@ -75,6 +74,17 @@ class Gaas_OCL_API:
             Returns the voigt feature database data structure which is compatible with the OpenCL code
         """
         return [('transWavenum','<f8'),('nAir','<f8'),('gammaAir','<f8'),('gammaSelf','<f8'),('refStrength','<f8'),('ePrimePrime','<f8'),('deltaAir','<f8')]
+    
+    def getVoigtRawStructDatatype(self):
+        """
+            Returns the voigt raw feature data structure which is compatible with the OpenCL code
+            
+            integratedArea;
+            transWavenum;
+            gammaD; //doppler (gaussian) broadening (HWHM)
+            gamma0; //lorenzian broadening (HWHM)
+        """
+        return [('integratedArea','<f8'),('transWavenum','<f8'),('gammaD','<f8'),('gamma0','<f8')]
     
     def getHTPDBStructDatatype(self):
         """
@@ -125,6 +135,31 @@ class Gaas_OCL_API:
             np.int32(wvn_np.size),
             np.float64(molarMass),
             np.float64(isoAbundance))
+        
+        abs_np = np.empty_like(wvn_np)
+        cl.enqueue_copy(self.queue, abs_np, abs_g)
+        return (wvn_np,abs_np)
+    
+    def voigtSim_raw(self, 
+                featureDatabase : np.array,
+                wvnStart : float,
+                wvnStep : float,
+                wvnEnd : float,
+                ):
+        wvn_np  = np.arange(wvnStart,wvnEnd,wvnStep).astype(np.float64)
+        wvn_g = cl.Buffer(self.ctx, self.mf.READ_ONLY | self.mf.COPY_HOST_PTR, wvn_np.nbytes, hostbuf = wvn_np) #wvns
+        abs_g = cl.Buffer(self.ctx, self.mf.WRITE_ONLY, wvn_np.nbytes) #absorbance
+        cl.enqueue_fill_buffer(self.queue,abs_g,np.float64(0),0,wvn_np.nbytes)
+        db_g = cl.Buffer(self.ctx, self.mf.READ_ONLY | self.mf.COPY_HOST_PTR, featureDatabase.nbytes, hostbuf = featureDatabase) #feature DB
+
+        knl = self.prg.lineshapeVoigt_raw
+        knl(self.queue,featureDatabase.shape,None,
+            wvn_g,
+            db_g,
+            abs_g,
+            np.float64(wvnStart),
+            np.float64(wvnStep),
+            np.int32(wvn_np.size))
         
         abs_np = np.empty_like(wvn_np)
         cl.enqueue_copy(self.queue, abs_np, abs_g)

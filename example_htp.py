@@ -26,7 +26,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import time
-import htpValidation as htpVal
+import published_validation.htpValidation as htpVal
 
 startWavenum = 7000
 endWavenum = 80000

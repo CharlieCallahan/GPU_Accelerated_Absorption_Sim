@@ -57,4 +57,3 @@ def runHAPI_HTP(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum
                                                       startWavenum, endWavenum),
                                                   WavenumberStep=wavenumStep, HITRAN_units=False)
     return (nus, coefs)
-

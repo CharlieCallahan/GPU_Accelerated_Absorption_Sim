@@ -1531,7 +1531,7 @@ __kernel void lineshapeVoigt(__global const double *wavenums,
 	double maxHW = doubleMax(dopHWHM, lorHWHM);
 	double minWavenum = database[i].transWavenum - maxHW * WAVENUM_WING;
 	double maxWavenum = database[i].transWavenum + maxHW * WAVENUM_WING;
-	int minInd = toWavenumIndex(startWavenum, wavenumStep, minWavenum) + 1; // the +1 makes this equivalent to hapi
+	int minInd = toWavenumIndex(startWavenum, wavenumStep, minWavenum)+1;
 	int maxInd = toWavenumIndex(startWavenum, wavenumStep, maxWavenum);
 
 	if (minInd < 0)
@@ -1556,6 +1556,46 @@ __kernel void lineshapeVoigt(__global const double *wavenums,
 	}
 }
 
+__kernel void lineshapeVoigt_raw(__global const double *wavenums,
+							__global const struct featureDataVoigtRaw *features, 
+							__global double *output, 
+							double startWavenum, 
+							double wavenumStep, 
+							int wavenumCount){
+								
+	int i = get_global_id(0);
+	// compute voigt parameters:
+	double dopHWHM = features[i].gammaD;
+	double lorHWHM = features[i].gamma0;
+	double strength = features[i].integratedArea;
+
+	// determine bounds (range in output array where the absorbance of this feature is non-negligible)
+	double maxHW = doubleMax(dopHWHM, lorHWHM);
+	double minWavenum = features[i].transWavenum - maxHW * WAVENUM_WING;
+	double maxWavenum = features[i].transWavenum + maxHW * WAVENUM_WING;
+	int minInd = toWavenumIndex(startWavenum, wavenumStep, minWavenum)+1;
+	int maxInd = toWavenumIndex(startWavenum, wavenumStep, maxWavenum);
+
+	if (minInd < 0)
+	{
+		minInd = 0;
+	}
+	if (maxInd >= wavenumCount)
+	{
+		maxInd = wavenumCount - 1;
+	}
+
+	// add lineshape to output
+	double currentVal;
+	double adjWavenum;
+	for (int specInd = minInd; specInd <= maxInd; specInd++)
+	{
+		adjWavenum = (wavenums[specInd] - (features[i].transWavenum));
+		currentVal = strength * voigtSingle(adjWavenum, dopHWHM, lorHWHM);
+		atomic_add_d((output + specInd), currentVal);
+	}
+}
+
 double doubleMax(double f1, double f2){
 	{
 		if(f1>f2){
@@ -1565,7 +1605,6 @@ double doubleMax(double f1, double f2){
 		}
 	}
 }
-
 
 __kernel void lineshapeHTP(__global  const double *wavenums, 
 							__global const struct featureDataHTP *database, 
@@ -1595,7 +1634,7 @@ __kernel void lineshapeHTP(__global  const double *wavenums,
 	double maxHW = doubleMax(gammaD, doubleMax(database[thread_ind].Gam0, database[thread_ind].Gam2));
 	double minWavenum = database[thread_ind].linecenter - maxHW * WAVENUM_WING;
 	double maxWavenum = database[thread_ind].linecenter + maxHW * WAVENUM_WING;
-	int minInd = toWavenumIndex(startWavenum, wavenumStep, minWavenum) + 1; // the +1 makes this equivalent to hapi
+	int minInd = toWavenumIndex(startWavenum, wavenumStep, minWavenum); // the +1 makes this equivalent to hapi
 	int maxInd = toWavenumIndex(startWavenum, wavenumStep, maxWavenum);
 
 	// clamps indices to the edges

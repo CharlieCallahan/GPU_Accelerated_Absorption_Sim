@@ -178,6 +178,34 @@ def simVoigt(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, m
     return (wvn[buff:(len(wvn)-buff+1)], a_coefs[buff:(len(a_coefs)-buff+1)])
     # return (wvn,a_coefs)
 
+class VoigtRawFeatureData:
+    #used to pass a list of feature data objects to simHTP
+    
+    def __init__(self, linecenter: float, integratedArea: float, GamD: float, Gam0: float) -> None:
+        self.dataList = [integratedArea,linecenter,GamD,Gam0]
+
+    def getDataTuple(self):
+        return (self.dataList[0],self.dataList[1],self.dataList[2],self.dataList[3])
+    
+def simVoigtRaw(featureData : list[VoigtRawFeatureData], wavenumStep : float, startWavenum : float, endWavenum : float):
+    voigt_dbtype = g_api.getVoigtRawStructDatatype()
+    dbArray = np.empty(len(featureData),dtype=voigt_dbtype)
+    for i in range(len(featureData)):
+        dbArray[i]['integratedArea'] = featureData[i].dataList[0]
+        dbArray[i]['transWavenum'] =   featureData[i].dataList[1]
+        dbArray[i]['gammaD'] =         featureData[i].dataList[2]
+        dbArray[i]['gamma0'] =         featureData[i].dataList[3]
+    wvn, a_coefs = g_api.voigtSim_raw(
+                                dbArray,
+                                startWavenum,
+                                wavenumStep,
+                                endWavenum)
+    return wvn, a_coefs
+    
+
+# [linecenter,Gam0,Gam2,Delta0,Delta2,anuVC,eta,lineIntensity]
+
+    
 def db_begin_gaas(parDirectory):
     gaas_par_directory = parDirectory
 gaas_par_directory = None #only used for HAPI emulation
