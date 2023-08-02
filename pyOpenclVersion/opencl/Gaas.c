@@ -1619,7 +1619,8 @@ __kernel void lineshapeHTP(__global  const double *wavenums,
 							double startWavenum, 
 							double wavenumStep, 
 							int wavenumCount, 
-							double molarMass )
+							double molarMass,
+							int offset )
 {
 	double cl = 299792458.f;				  // speed of light
 	double kb = 1.3806488e-23f;			  // Boltzmann constant
@@ -1629,7 +1630,8 @@ __kernel void lineshapeHTP(__global  const double *wavenums,
 	double va0 = sqrt(2 * kb * tempK / M); // most probable speed of molecules with mass M
 
 	// feature index
-	int thread_ind = get_global_id(0);
+
+	int thread_ind = get_global_id(0) + offset; 
 
 	// feature global variables
 

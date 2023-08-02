@@ -248,7 +248,8 @@ __kernel void lineshapeHTP(__global const double *wavenums,
 							double startWavenum, 
 							double wavenumStep, 
 							int wavenumCount, 
-							double molarMass);
+							double molarMass,
+							int offset);
 
 // fadeeva function
 struct clComplex w(struct clComplex z);

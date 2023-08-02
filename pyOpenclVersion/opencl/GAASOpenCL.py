@@ -203,6 +203,9 @@ class Gaas_OCL_API:
                 molarMass : float
                 ):
         
+        magic_numbers = [2000,6000,8000,16000,32000,64000] #for some reason, running in batches of this many lines at a time is orders of magnitude faster 
+        magic_num = 2000
+
         wvn_np  = np.arange(wvnStart,wvnEnd,wvnStep).astype(np.float64)
 
         wvn_g = cl.Buffer(self.ctx, self.mf.READ_ONLY | self.mf.COPY_HOST_PTR, wvn_np.nbytes, hostbuf = wvn_np) #wvns
@@ -212,16 +215,34 @@ class Gaas_OCL_API:
         db_g = cl.Buffer(self.ctx, self.mf.READ_ONLY | self.mf.COPY_HOST_PTR, featureDatabase.nbytes, hostbuf = featureDatabase) #feature DB
 
         knl = self.prg.lineshapeHTP
-        knl(self.queue,featureDatabase.shape,None,
-            wvn_g,
-            db_g,
-            abs_g,
-            np.float64(temp),
-            np.float64(wvnStart),
-            np.float64(wvnStep),
-            np.int32(wvn_np.size),
-            np.float64(molarMass))
-        
+
+        offset = 0
+        numFeats = featureDatabase.size
+        while(offset<=np.size(featureDatabase)):
+            nleft = numFeats-offset
+            #find magic number
+            magic_num = magic_numbers[0]
+            if(nleft > magic_numbers[-1]):
+                magic_num = magic_numbers[-1]
+            else:
+                for i in range(len(magic_numbers)-1):
+                    if(nleft >= magic_numbers[i] and nleft <= magic_numbers[i+1]):
+                        magic_num = magic_numbers[i]
+
+            kernelSize = min(nleft,magic_num)
+            if(kernelSize == 0):
+                break
+            knl(self.queue,(kernelSize,1),None,
+                wvn_g,
+                db_g,
+                abs_g,
+                np.float64(temp),
+                np.float64(wvnStart),
+                np.float64(wvnStep),
+                np.int32(wvn_np.size),
+                np.float64(molarMass),
+                np.int32(offset))
+            offset+=magic_num
         abs_np = np.empty_like(wvn_np)
         cl.enqueue_copy(self.queue, abs_np, abs_g)
         return (wvn_np,abs_np)
