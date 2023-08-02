@@ -55,7 +55,7 @@ class Gaas_OCL_API:
         # os.environ['GMX_GPU_DISABLE_COMPATIBILITY_CHECK'] = '1'
         hdrSearchPath = os.path.dirname(os.path.abspath(__file__)).replace("\\","/")
 
-        self.prg.build(options="-I" + hdrSearchPath + " -w")
+        self.prg.build(options="-I" + hdrSearchPath + " -cl-finite-math-only -w")
         print(self.prg.get_build_info(self.ctx.devices[0],cl.program_build_info.LOG))
         print(self.prg.get_info(cl.program_info.KERNEL_NAMES))
 
@@ -136,6 +136,8 @@ class Gaas_OCL_API:
             np.float64(molarMass),
             np.float64(isoAbundance))
         
+        self.queue.finish()
+
         abs_np = np.empty_like(wvn_np)
         cl.enqueue_copy(self.queue, abs_np, abs_g)
         return (wvn_np,abs_np)
@@ -146,21 +148,48 @@ class Gaas_OCL_API:
                 wvnStep : float,
                 wvnEnd : float,
                 ):
+        
+        magic_numbers = [2000,6000,8000,16000,32000,64000] #for some reason, running in batches of this many lines at a time is orders of magnitude faster 
+        magic_num = 2000
+        # for mn in magic_numbers:
+            # if(np.size(featureDatabase)>magic_numbers)
+
         wvn_np  = np.arange(wvnStart,wvnEnd,wvnStep).astype(np.float64)
         wvn_g = cl.Buffer(self.ctx, self.mf.READ_ONLY | self.mf.COPY_HOST_PTR, wvn_np.nbytes, hostbuf = wvn_np) #wvns
-        abs_g = cl.Buffer(self.ctx, self.mf.WRITE_ONLY, wvn_np.nbytes) #absorbance
+        abs_g = cl.Buffer(self.ctx, self.mf.READ_WRITE, wvn_np.nbytes) #absorbance
         cl.enqueue_fill_buffer(self.queue,abs_g,np.float64(0),0,wvn_np.nbytes)
         db_g = cl.Buffer(self.ctx, self.mf.READ_ONLY | self.mf.COPY_HOST_PTR, featureDatabase.nbytes, hostbuf = featureDatabase) #feature DB
 
         knl = self.prg.lineshapeVoigt_raw
-        knl(self.queue,featureDatabase.shape,None,
-            wvn_g,
-            db_g,
-            abs_g,
-            np.float64(wvnStart),
-            np.float64(wvnStep),
-            np.int32(wvn_np.size))
-        
+        offset = 0
+        numFeats = featureDatabase.size
+        while(offset<=np.size(featureDatabase)):
+            nleft = numFeats-offset
+
+            #find magic number
+            magic_num = magic_numbers[0]
+            if(nleft > magic_numbers[-1]):
+                magic_num = magic_numbers[-1]
+            else:
+                for i in range(len(magic_numbers)-1):
+                    if(nleft >= magic_numbers[i] and nleft <= magic_numbers[i+1]):
+                        magic_num = magic_numbers[i]
+
+            kernelSize = min(nleft,magic_num)
+            if(kernelSize == 0):
+                break
+            knl(self.queue,(kernelSize,1),None,
+                wvn_g,
+                db_g,
+                abs_g,
+                np.float64(wvnStart),
+                np.float64(wvnStep),
+                np.int32(wvn_np.size),
+                np.int32(offset))
+            
+            self.queue.finish()
+            offset += magic_num
+            # print(offset)
         abs_np = np.empty_like(wvn_np)
         cl.enqueue_copy(self.queue, abs_np, abs_g)
         return (wvn_np,abs_np)

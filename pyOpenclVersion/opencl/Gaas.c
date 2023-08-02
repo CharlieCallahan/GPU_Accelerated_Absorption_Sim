@@ -1561,9 +1561,10 @@ __kernel void lineshapeVoigt_raw(__global const double *wavenums,
 							__global double *output, 
 							double startWavenum, 
 							double wavenumStep, 
-							int wavenumCount){
+							int wavenumCount,
+							int offset){
 								
-	int i = get_global_id(0);
+	int i = get_global_id(0) + offset;
 	// compute voigt parameters:
 	double dopHWHM = features[i].gammaD;
 	double lorHWHM = features[i].gamma0;
@@ -1575,6 +1576,9 @@ __kernel void lineshapeVoigt_raw(__global const double *wavenums,
 	double maxWavenum = features[i].transWavenum + maxHW * WAVENUM_WING;
 	int minInd = toWavenumIndex(startWavenum, wavenumStep, minWavenum)+1;
 	int maxInd = toWavenumIndex(startWavenum, wavenumStep, maxWavenum);
+
+	// minInd = (int)(minInd>0)*minInd;
+	// maxInd = (int)(maxInd >= wavenumCount)*(wavenumCount - 1) + (int)(maxInd < wavenumCount)*(maxInd);
 
 	if (minInd < 0)
 	{
@@ -1592,7 +1596,9 @@ __kernel void lineshapeVoigt_raw(__global const double *wavenums,
 	{
 		adjWavenum = (wavenums[specInd] - (features[i].transWavenum));
 		currentVal = strength * voigtSingle(adjWavenum, dopHWHM, lorHWHM);
+		// currentVal = 1.0;
 		atomic_add_d((output + specInd), currentVal);
+		// output[specInd] = output[specInd] + currentVal ;
 	}
 }
 

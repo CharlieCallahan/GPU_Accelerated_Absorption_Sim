@@ -3,6 +3,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..')))
 os.chdir('../')
 import hapi
+os.environ["GAAS_OCL_DEVICE"] = '0'
 import gaas_ocl as gs
 import numpy as np
 import time
@@ -60,6 +61,9 @@ def hapiSimVoigt_raw(features, wavenumStep, startWavenum, endWavenum):
     return wavenums,spectrum
 
 def getErrorVoigt_raw(features : list[gs.VoigtRawFeatureData], wavenumStep : float , startWavenum: float, endWavenum : float) :
+    print("Priming gaas")
+    (wvn_gs,abs_gs) = gs.simVoigtRaw(features,wavenumStep,startWavenum,endWavenum)
+
     print("Running GAAS")
 
     t1 = time.time()
@@ -79,6 +83,32 @@ def getErrorVoigt_raw(features : list[gs.VoigtRawFeatureData], wavenumStep : flo
     # plt.show()
     return err, hTime, gTime
     
+def genComparisonPlot_data()->pd.DataFrame:
+    featureSets = []
+    startWvn = 2000
+    endWvn = 6000
+    wvnStep = 0.001
+    seed = 1
+    featGen = randomFeatGenerator(seed)
+    numFeatures = 1280
+    #gen features
+    featureSets.append(featGen.genFeatures(startWvn,endWvn,numFeatures))
+    out = []
+
+    t1 = time.time()
+    (wvn_gs,abs_gs) = gs.simVoigtRaw(featureSets[0],wvnStep,startWvn,endWvn)
+    gTime = time.time() - t1
+
+    t1 = time.time()
+    nus_h,coefs_h = hapiSimVoigt_raw(featureSets[0],wvnStep,startWvn,endWvn)
+    hTime = time.time() - t1
+    plt.plot(nus_h, coefs_h)
+    plt.plot(wvn_gs, abs_gs)
+    plt.show()
+    
+    outPD = pd.DataFrame(np.stack([nus_h,coefs_h,wvn_gs,abs_gs], axis=1),columns=["wvn_hapi","coefs_hapi","wvn_gaas","coefs_gaas"])
+    return outPD
+
 class randomFeatGenerator:
     def __init__(self, seed : int) -> None:
         random.seed(seed)
@@ -95,14 +125,20 @@ class randomFeatGenerator:
             feat_data.append(gs.VoigtRawFeatureData(lc,lineIntensity,GamD,Gam0))
         return feat_data
     
-    def genNonRandomFeatures(self, startWavenum : float, endWavenum : float, nFeatures: int) -> list[gs.HTPFeatureData]:
+    def genNonRandomFeatures(self, startWavenum : float, endWavenum : float, nFeatures: int, const_GamD:float=None, const_Gam0:float=None) -> list[gs.VoigtRawFeatureData]:
         #generates a list of evenly spaced features of the same size
         feat_data = []
         d_lc = (endWavenum-startWavenum)/nFeatures
         for i in range(nFeatures):
             lc = startWavenum + d_lc*i
-            GamD = (self.max_val-self.min_val)/2
-            Gam0 = (self.max_val-self.min_val)/2
+            if(const_GamD != None):
+                GamD = const_GamD
+            else:
+                GamD = (self.max_val-self.min_val)/2
+            if(const_Gam0 != None):
+                Gam0 = const_Gam0
+            else:    
+                Gam0 = (self.max_val-self.min_val)/2
             lineIntensity = (self.max_val-self.min_val)/2
             feat_data.append(gs.VoigtRawFeatureData(lc,lineIntensity,GamD,Gam0))
         return feat_data
@@ -121,6 +157,7 @@ def runRandValidation(numFeatures: int, numRuns: int) -> pd.DataFrame:
     for i in range(numRuns):
         err, hTime, gTime = getErrorVoigt_raw(featureSets[i], wvnStep, startWvn, endWvn)
         out.append([err,hTime,gTime])
+        # print("error: ",err)
     outpd = pd.DataFrame(out, columns=["error %","HAPITime","gaasTime"])
 
     return outpd
@@ -142,20 +179,76 @@ def runSpeedTest(maxFeats: int, numRuns: int, randSeed:int) -> pd.DataFrame:
 
     out = []
     for i in range(len(feats)):
-        err, hTime, gTime = getErrorVoigt_raw(featureSets[i], wvnStep, startWvn, endWvn)
+        err, hTime, gTime = getErrorVoigt_raw(feats[i], wvnStep, startWvn, endWvn)
         out.append([len(feats[i]),err,hTime,gTime])
 
     outpd = pd.DataFrame(out, columns=["numFeats","error %","HAPITime","gaasTime"])
     return outpd
-    
-def runSpeedTestGaasOnly(maxFeats: int, numRuns: int, randSeed:int) -> pd.DataFrame:
+
+def runSpeedTest2d(maxFeats: int, minHWHM: int, maxHWHM: int, numRuns: int, randSeed:int) -> pd.DataFrame:
     startWvn = 2000
     endWvn = 6000
     wvnStep = 0.001
-    evenSpacedFeats = False
+    evenSpacedFeats = True
+    featGen = randomFeatGenerator(randSeed)
+
+    nfeats = np.arange(1,maxFeats,maxFeats/numRuns)
+    hwhms = np.linspace(minHWHM,maxHWHM,numRuns)
+
+    feats = []
+    out = []
+
+    for j in range(numRuns): #hwhm
+        for i in range(numRuns): #nlines
+            i_nFeats = nfeats[i]
+            j_hwhm = hwhms[j]
+            feats = featGen.genNonRandomFeatures(startWvn,endWvn,int(i_nFeats),j_hwhm/2,j_hwhm/2)
+            err, hTime, gTime = getErrorVoigt_raw(feats, wvnStep, startWvn, endWvn)
+            out.append([int(i_nFeats),j_hwhm,err,hTime,gTime])
+
+    outpd = pd.DataFrame(out, columns=["numFeats", "meanHWHM", "error %", "HAPITime", "gaasTime"])
+    return outpd
+
+def runSpeedTest2d_gaasonly(maxFeats: int, minHWHM: int, maxHWHM: int, numRuns: int, randSeed:int) -> pd.DataFrame:
+    startWvn = 2000
+    endWvn = 6000
+    wvnStep = 0.001
+    evenSpacedFeats = True
+    featGen = randomFeatGenerator(randSeed)
+
+    nfeats = np.arange(1,maxFeats,maxFeats/numRuns)
+    hwhms = np.linspace(minHWHM,maxHWHM,numRuns)
+
+    feats = []
+    out = []
+
+    for j in range(numRuns): #hwhm
+        for i in range(numRuns): #nlines
+            i_nFeats = nfeats[i]
+            j_hwhm = hwhms[j]
+            feats = featGen.genNonRandomFeatures(startWvn,endWvn,int(i_nFeats),j_hwhm/2,j_hwhm/2)
+            t1 = time.time()
+            # (wvn_gs,abs_gs) = gs.simHTP_legacy(feats[i],300,1.0,wvnStep,startWvn,endWvn)
+            (wvn_gs,abs_gs) = gs.simVoigtRaw(feats,wvnStep,startWvn,endWvn)
+
+            # plt.plot(wvn_gs,abs_gs)
+            # plt.show()
+            gTime = time.time() - t1
+            print("time: ",gTime)
+            out.append([int(i_nFeats),j_hwhm,gTime])
+
+    outpd = pd.DataFrame(out, columns=["numFeats", "meanHWHM", "gaasTime"])
+    return outpd
+
+def runSpeedTestGaasOnly(maxFeats: int, numRuns: int, randSeed:int) -> pd.DataFrame:
+    startWvn = 2000
+    endWvn = 20000
+    wvnStep = 0.001
+    evenSpacedFeats = True
     featGen = randomFeatGenerator(randSeed)
     nfeats = np.arange(1,maxFeats,maxFeats/numRuns)
     feats = []
+    nRuns = 10
     delta_lc = (endWvn-startWvn)/numRuns
     for n in nfeats:
         if evenSpacedFeats:
@@ -164,26 +257,38 @@ def runSpeedTestGaasOnly(maxFeats: int, numRuns: int, randSeed:int) -> pd.DataFr
             feats.append(featGen.genFeatures(startWvn,endWvn,int(n)))
 
     out = []
-    for i in range(len(feats)):
-        print("nfeats: ",len(feats[i]))
-        t1 = time.time()
-        (wvn_gs,abs_gs) = gs.simVoigtRaw(feats[i],wvnStep,startWvn,endWvn)
-        # plt.plot(wvn_gs,abs_gs)
-        # plt.show()
-        gTime = time.time() - t1
-        print("time: ",gTime)
+    for i_run in range(nRuns):
+        for i in range(len(feats)):
+            print("Running GAAS Voigt")
+            print("nfeats: ",len(feats[i]))
+            #prime it by running once before
+            t1 = time.time()
+            # (wvn_gs,abs_gs) = gs.simHTP_legacy(feats[i],300,1.0,wvnStep,startWvn,endWvn)
+            (wvn_gs,abs_gs) = gs.simVoigtRaw(feats[i],wvnStep,startWvn,endWvn)
 
-        out.append([len(feats[i]),gTime])
+            # plt.plot(wvn_gs,abs_gs)
+            # plt.show()
+            gTime = time.time() - t1
+            print("time: ",gTime)
 
-    outpd = pd.DataFrame(out, columns=["numFeats","gaasTime"])
+            out.append([i_run, len(feats[i]),gTime])
+
+    outpd = pd.DataFrame(out, columns=["run_num","numFeats","gaasTime"])
     return outpd
     
 def runAll():
     cwd = os.path.dirname(os.path.realpath(__file__))
-    randValRes = runRandValidation(256000, 10)
-    randValRes.to_csv(cwd+"voigt_rand_val.csv")
-    speedValRes = runSpeedTest(256000, 20, 1)
-    speedValRes.to_csv(cwd+"voigt_speed_val.csv")
-    # speedGAASRes = runSpeedTestGaasOnly(20000, 60, 1)
-    # speedGAASRes.to_csv(cwd+"\\Validation\\htp_speed_gaas.csv")
+    # compPlotDF = genComparisonPlot_data()
+    # compPlotDF.to_csv(cwd+"\\voigt_comparison_plot.csv")
+    
+    # randValRes = runRandValidation(256000, 10)
+    # randValRes.to_csv(cwd+"\\voigt_rand_val_new_adaptive.csv")
+    # speedValRes = runSpeedTest(1024000, 20, 1)
+    # speedValRes.to_csv(cwd+"//voigt_speed_val_new_adaptive.csv")
+    # speedGAASRes = runSpeedTestGaasOnly(1024000, 20, 1)
+    # speedGAASRes.to_csv(cwd+"\\voigt_speed_val_new_adaptive_gaas.csv")
+
+    # res = runSpeedTest2d(10000, 0.1, 10, 10, 1)
+    res = runSpeedTest2d_gaasonly(10000, 0.1, 10, 10, 1)
+    res.to_csv(cwd+"\\voigt_speed_test_2d_gaas_new_adaptive.csv")
 runAll()

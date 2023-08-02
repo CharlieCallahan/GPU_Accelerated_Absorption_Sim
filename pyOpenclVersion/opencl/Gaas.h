@@ -223,7 +223,8 @@ __kernel void lineshapeVoigt_raw(__global const double *wavenums,
 							__global double *output, 
 							double startWavenum, 
 							double wavenumStep, 
-							int wavenumCount);
+							int wavenumCount,
+							int offset);
 
 // return the larger of the two values
 double doubleMax(double f1, double f2);

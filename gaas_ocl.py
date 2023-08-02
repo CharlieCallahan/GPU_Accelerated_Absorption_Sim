@@ -37,37 +37,6 @@ WAVENUMBUFFER = 50
 
 g_api = gaasApi.Gaas_OCL_API()
 
-def init(startWavenum, endWavenum, moleculeID, isotopologueID, gaasDirectory, ParDirectory, id, loadFromHITRAN=False):
-    """
-    Generates absorption database related files in a compact binary format which allows GAAS binary to quickly
-    load absorption parameters when running multiple simulations. Also loads a new TIPS file if there isnt one in the
-    current directory
-    :param startWavenum: First Wavenumber to simulate, any features with linecenter less than this are ignored
-    :param endWavenum: Last wavenumber to simulate, any features with linecenter greater than this are ignored
-    :param moleculeID: HITRAN id of molecule to simulate ex: 'H2O', 'CO2' etc.
-    :param gaasDirectory: Directory path to store Gaas program data
-    :param ParDirectory: directory containing HITRAN Par files
-    :param id: id to refer to this initialization when running simulation
-    :param loadFromHITRAN: specify True if you want to download par files from the Hitran server
-    :param isotopologueID: default is 1, specifies the isotopologue (integer) of the molecule being used, matches the indexing of
-    isotopologues on HITRAN
-    :return: void
-    """
-
-    save_absorption_db(moleculeID, isotopologueID, gaasDirectory+moleculeID+"_iso_"+str(isotopologueID)+"_"+id, max(
-        startWavenum-WAVENUMBUFFER, 0), max(endWavenum+WAVENUMBUFFER, 0), ParDirectory, loadFromHITRAN=loadFromHITRAN)
-
-    # check for TIPS file in gaasDirectory.
-    tipsFilename = moleculeID + "_iso_" + str(isotopologueID) + "_tips.csv"
-    shouldGenTips = True
-
-    for f in listdir(gaasDirectory):
-        if f == tipsFilename:
-            shouldGenTips = False
-    if shouldGenTips:
-        print("generating TIPS file")
-        gt.generateTIPSFile(moleculeID, isotopologueID, gaasDirectory)
-
 def getHITRANMolecules():
     return ['H2O', 'CO2', 'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3',
                             'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl', 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2', 'NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
