@@ -171,10 +171,6 @@ def simVoigtRaw(featureData : list[VoigtRawFeatureData], wavenumStep : float, st
                                 endWavenum)
     return wvn, a_coefs
     
-
-# [linecenter,Gam0,Gam2,Delta0,Delta2,anuVC,eta,lineIntensity]
-
-    
 def db_begin_gaas(parDirectory):
     gaas_par_directory = parDirectory
 gaas_par_directory = None #only used for HAPI emulation
