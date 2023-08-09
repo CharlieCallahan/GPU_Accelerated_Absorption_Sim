@@ -18,16 +18,47 @@ def getOptionalParam(key:str, paramDict:dict, defaultVal):
 """
     Line params are specific to each line
     Line params should have the following keys:
-    S_ref 
-    E_pp
+
+Required Environment Params:
+    T - temperature
+    molarMass - molar mass of target species
+    diluents - dict like {'CO2':0.1, 'N2':0.2, speciesID:concentration} make sure the target species is in here
+
+Required line Params:
+
+    S_ref - Reference linestrength
+    E_pp - lower state energy E''
     nu_0 - Transition linecenter (cm-1)
 
-    Envparams are the parameters used globally for the spectrum
-    should have:
-    T,
-    molarMass,
-    diluents: dict like {'CO2':0.1, 'N2':0.2, speciesID:concentration}
+Optional Line Params:
+    
+    Collisonal HWHM (Gamma0):
+        gamma0_diluent - collisional HWHM
+        n_gamma0_diluent - collisional HWHM temp. dependence
 
+    Pressure Shift (Delta0):
+        delta0_diluent - collisional shift
+        n_delta0_diluent - collisional shift temp. dependence
+
+    Speed dependent broadening (Gamma2):
+        SD_gamma_diluent - ratio of speed dependent broadening to collisional broadening
+        n_gamma2_diluent - temp. dependence of speed dependent broadening
+
+    Speed dependent shifting (Delta2):
+        SD_shift_diluent - ratio of speed dependent shift to pressure shift
+        n_delta2_diluent - temp. dependence of speed dependent shift
+
+    Dicke Narrowing (nuVC):
+        nuVC_diluent - dicke narrowing
+        n_nuVC_diluent - dicke narrowing temp. dependence
+
+    Correlation Parameter (eta):
+        eta_diluent - correlation parameter
+"""
+
+
+"""
+line intensity
 """
 def lineIntensity(lineParams:dict, envParams: dict, TIPSCalc:gt.TIPsCalculator):
     c2 = 1.4388028496642257; # cm*K
@@ -50,6 +81,9 @@ def Gamma_d(lineParams:dict, envParams: dict):
     m = molarMass * cMassMol * 1000;
     return math.sqrt(2 * cBolts * tempKelvin * LOG2 / m / (cc * cc)) * transWavenum
 
+"""
+collisional hwhm
+"""
 def Gamma_0(lineParams:dict, envParams: dict):
     diluents = envParams["diluents"]
     gamma0 = 0
@@ -68,6 +102,9 @@ def Gamma_0(lineParams:dict, envParams: dict):
         gamma0 += diluent_concentration*gamma_0_diluent*P/P_ref*((T/T_ref)**(n_gamma_0_diluent))
     return gamma0
 
+"""
+pressure shift
+"""
 def Delta_0(lineParams:dict, envParams: dict):
     diluents = envParams["diluents"]
     delta_0 = 0
@@ -87,6 +124,9 @@ def Delta_0(lineParams:dict, envParams: dict):
         delta_0 += diluent_concentration*(delta_0_diluent + n_delta_0_diluent*(T-T_ref))*P/P_ref
     return delta_0
 
+"""
+speed dependent broadening
+"""
 def Gamma_2(lineParams:dict, envParams: dict):
     diluents = envParams["diluents"]
     gamma_2 = 0
@@ -111,6 +151,9 @@ def Gamma_2(lineParams:dict, envParams: dict):
 
     return gamma_2
 
+"""
+speed dependent shift
+"""
 def Delta_2(lineParams:dict, envParams: dict):
     diluents = envParams["diluents"]
     delta_2 = 0
@@ -131,7 +174,41 @@ def Delta_2(lineParams:dict, envParams: dict):
 
         diluent_concentration = diluents[diluent]
         
-        delta_2 += diluent_concentration*as_dilent*delta_0+n_delta_2*(T-T_ref)*P/P_ref
+        delta_2 += diluent_concentration*(as_dilent*delta_0+n_delta_2*(T-T_ref))*P/P_ref
 
     return delta_2
 
+"""
+dicke narrowing
+"""
+def Nu_vc(lineParams:dict, envParams: dict):
+    diluents = envParams["diluents"]
+    nu_vc = 0
+    P_ref = getOptionalParam("P_ref",envParams,1)
+    T_ref = getOptionalParam("T_ref",envParams,296)
+    T = getOptionalParam("T",envParams,296)
+    P = getOptionalParam("P",envParams,1)
+
+    for diluent in diluents.keys():
+        nu_vc_diluent_id = "nuVC_"+diluent
+        nu_vc_dilent = getOptionalParam(nu_vc_diluent_id,lineParams,0)
+        
+        n_nu_vc_diluent_id = "n_nuVC_"+diluent
+        n_nu_vc_diluent = getOptionalParam(n_nu_vc_diluent_id,lineParams,0)
+        diluent_concentration = diluents[diluent]
+        nu_vc += diluent_concentration*nu_vc_dilent*P/P_ref*((T_ref/T)**n_nu_vc_diluent)
+
+    return nu_vc
+        
+"""
+correlation parameter for HTP
+"""
+def Eta(lineParams:dict, envParams: dict):
+    diluents = envParams["diluents"]
+    eta = 0
+
+    for diluent in diluents.keys():
+        eta_diluent_id = "eta_"+diluent
+        eta_diluent = getOptionalParam(eta_diluent_id,lineParams,0)
+        eta += eta_diluent*diluent
+    return eta
