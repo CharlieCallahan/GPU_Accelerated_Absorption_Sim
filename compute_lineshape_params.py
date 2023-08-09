@@ -3,9 +3,10 @@ This file has functions for computing HTP and Voigt lineshape parameters from a 
 this is based on MATS from NIST
 https://pages.nist.gov/MATS
 """
-from gaas_ocl import HTPFeatureData
+from gaas_ocl import HTPFeatureData, g_api
 import tipsDB.genTIPSFile as gt
 import math
+import numpy as np
 
 T_ref = 296
 LOG2 = math.log(2)
@@ -22,6 +23,8 @@ def getOptionalParam(key:str, paramDict:dict, defaultVal):
 Required Environment Params:
     T - temperature
     molarMass - molar mass of target species
+    targetSpeciesID - name of target species like 'CH4'
+    iso - isotopologue number, defaults to 1
     diluents - dict like {'CO2':0.1, 'N2':0.2, speciesID:concentration} make sure the target species is in here
 
 Required line Params:
@@ -212,3 +215,28 @@ def Eta(lineParams:dict, envParams: dict):
         eta_diluent = getOptionalParam(eta_diluent_id,lineParams,0)
         eta += eta_diluent*diluent
     return eta
+
+"""
+Generate a set of HTP parameters to pass to GAAS HTP generator
+"""
+def GenerateHTPLineList(lineParamsList : list[dict], envParams : dict):
+    htp_dbtype = g_api.getHTPDBStructDatatype()
+    dbArray = np.empty(len(lineParamsList),dtype=htp_dbtype)
+    iso = getOptionalParam('iso',envParams,1)
+    tipsCalc = gt.TIPsCalculator(envParams['targetSpeciesID'],iso)
+    
+    offset = 0
+
+    for lineParams in lineParamsList:
+        dbArray[offset]['transWavenum'] = lineParams['v_0']
+        dbArray[offset]['Gam0'] = Gamma_0(lineParams,envParams)
+        dbArray[offset]['Gam2'] = Gamma_2(lineParams,envParams)
+        dbArray[offset]['Delta0'] = Delta_0(lineParams,envParams)
+        dbArray[offset]['Delta2'] = Delta_2(lineParams,envParams)
+        dbArray[offset]['anuVC'] = Nu_vc(lineParams,envParams)
+        dbArray[offset]['eta'] = Eta(lineParams,envParams)
+        dbArray[offset]['lineIntensity'] = lineIntensity(lineParams,envParams,tipsCalc)
+
+        offset+=1
+
+    return dbArray
