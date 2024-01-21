@@ -315,36 +315,36 @@ def runSpeedTest2d(maxFeats: int, minHWHM: int, maxHWHM: int, numRuns: int, rand
     outpd = pd.DataFrame(out, columns=["numFeats", "meanHWHM", "error %", "HAPITime", "gaasTime"])
     return outpd
 
-# def runSpeedTest2d_gaasonly(maxFeats: int, minHWHM: int, maxHWHM: int, numRuns: int, randSeed:int) -> pd.DataFrame:
-#     startWvn = 2000
-#     endWvn = 6000
-#     wvnStep = 0.001
-#     evenSpacedFeats = True
-#     featGen = randomFeatGenerator(randSeed)
+def runSpeedTest2d_gaasonly(maxFeats: int, minHWHM: int, maxHWHM: int, numRuns: int, randSeed:int) -> pd.DataFrame:
+    startWvn = 2000
+    endWvn = 6000
+    wvnStep = 0.001
+    evenSpacedFeats = True
+    featGen = randomFeatGenerator(randSeed)
 
-#     nfeats = np.arange(1,maxFeats,maxFeats/numRuns)
-#     hwhms = np.linspace(minHWHM,maxHWHM,numRuns)
+    nfeats = np.arange(1,maxFeats,maxFeats/numRuns)
+    hwhms = np.linspace(minHWHM,maxHWHM,numRuns)
 
-#     feats = []
-#     out = []
+    feats = []
+    out = []
 
-#     for j in range(numRuns): #hwhm
-#         for i in range(numRuns): #nlines
-#             i_nFeats = nfeats[i]
-#             j_hwhm = hwhms[j]
-#             feats = featGen.genNonRandomFeatures(startWvn,endWvn,int(i_nFeats),j_hwhm/2,j_hwhm/2)
-#             t1 = time.time()
-#             # (wvn_gs,abs_gs) = gs.simHTP_legacy(feats[i],300,1.0,wvnStep,startWvn,endWvn)
-#             (wvn_gs,abs_gs) = gs.simVoigtRaw(feats,wvnStep,startWvn,endWvn)
+    for j in range(numRuns): #hwhm
+        for i in range(numRuns): #nlines
+            i_nFeats = nfeats[i]
+            j_hwhm = hwhms[j]
+            feats = featGen.genNonRandomFeatures(startWvn,endWvn,int(i_nFeats),j_hwhm)
+            t1 = time.time()
+            (wvn_gs,abs_gs) = gs.simHTP_legacy(feats,300,1.0,wvnStep,startWvn,endWvn)
+            # (wvn_gs,abs_gs) = gs.simVoigtRaw(feats,wvnStep,startWvn,endWvn)
 
-#             # plt.plot(wvn_gs,abs_gs)
-#             # plt.show()
-#             gTime = time.time() - t1
-#             print("time: ",gTime)
-#             out.append([int(i_nFeats),j_hwhm,gTime])
+            # plt.plot(wvn_gs,abs_gs)
+            # plt.show()
+            gTime = time.time() - t1
+            print("time: ",gTime)
+            out.append([int(i_nFeats),j_hwhm,gTime])
 
-#     outpd = pd.DataFrame(out, columns=["numFeats", "meanHWHM", "gaasTime"])
-#     return outpd
+    outpd = pd.DataFrame(out, columns=["numFeats", "meanHWHM", "gaasTime"])
+    return outpd
 
 def runAll():
     cwd = os.path.dirname(os.path.realpath(__file__))
@@ -352,11 +352,11 @@ def runAll():
     # compPlotDF.to_csv(cwd+"\\htp_comparison_plot.csv")
     # randValRes = runRandValidation(25600, 20)
     # randValRes.to_csv(cwd+"\\htp_rand_val.csv")
-    speedValRes = runSpeedTest(25600, 20, 1)
-    speedValRes.to_csv(cwd+"\\htp_speed_val.csv")
+    # speedValRes = runSpeedTest(25600, 20, 1)
+    # speedValRes.to_csv(cwd+"\\htp_speed_val.csv")
     # speedGAASRes = runSpeedTestGaasOnly(256000, 60, 1)
-    # HT2d = runSpeedTest2d(10000, 0.1, 10, 10, 1)
-    # HT2d.to_csv(cwd+"\\htp_2d.csv")
+    HT2d = runSpeedTest2d_gaasonly(10000, 0.1, 10, 10, 1)
+    HT2d.to_csv(cwd+"\\htp_2d_rtx3070.csv")
     # runSingleGaasOnly(256000, 60, 1)
     # speedGAASRes.to_csv(cwd+"\\htp_speed_gaas_random.csv")
 runAll()
