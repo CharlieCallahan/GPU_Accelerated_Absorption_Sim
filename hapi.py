@@ -17824,9 +17824,9 @@ def hum1_wei(x,y,n=24):
     cerf = 1j*z/sqrt(pi)/(z**2-0.5)
     """
 
-    # mask = abs(x)+y<15.0
+    mask = abs(x)+y<15.0
     #Adjusted to remove the approximation for comparison with GAAS
-    mask = (np.zeros_like(x) == 0) #array of "True"
+    # mask = (np.zeros_like(x) == 0) #array of "True"
     if any(mask):
         w24 = weideman(x[mask],y[mask],n)
         place(cerf,mask,w24)
