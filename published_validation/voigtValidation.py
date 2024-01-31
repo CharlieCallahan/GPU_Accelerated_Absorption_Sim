@@ -204,6 +204,7 @@ def runSpeedTest2d(maxFeats: int, minHWHM: int, maxHWHM: int, numRuns: int, rand
             j_hwhm = hwhms[j]
             feats = featGen.genNonRandomFeatures(startWvn,endWvn,int(i_nFeats),j_hwhm/2,j_hwhm/2)
             err, hTime, gTime = getErrorVoigt_raw(feats, wvnStep, startWvn, endWvn)
+            print(hTime/gTime*100," % faster")
             out.append([int(i_nFeats),j_hwhm,err,hTime,gTime])
 
     outpd = pd.DataFrame(out, columns=["numFeats", "meanHWHM", "error %", "HAPITime", "gaasTime"])
@@ -284,11 +285,11 @@ def runAll():
     # randValRes = runRandValidation(25600, 20)
     # randValRes.to_csv(cwd+"\\voigt_rand_val_new_adaptive.csv")
     # speedValRes = runSpeedTest(1024000, 20, 1)
-    # speedValRes.to_csv(cwd+"//voigt_speed_val_new_adaptive.csv")
+    # speedValRes.to_csv(cwd+"/published_validation/gaas_with_approx/voigt_speed_val_new_adaptive.csv")
     # speedGAASRes = runSpeedTestGaasOnly(1024000, 20, 1)
     # speedGAASRes.to_csv(cwd+"\\voigt_speed_val_new_adaptive_gaas.csv")
 
-    # res = runSpeedTest2d(10000, 0.1, 10, 10, 1)
-    res = runSpeedTest2d_gaasonly(10000, 0.1, 10, 10, 1)
-    res.to_csv(cwd+"\\voigt_speed_test_2d_gaas_new_adaptive.csv")
-# runAll()
+    res = runSpeedTest2d(10000, 0.1, 10, 10, 1)
+    # res = runSpeedTest2d_gaasonly(10000, 0.1, 10, 10, 1)
+    res.to_csv(cwd+"/gaas_with_approx/voigt_speed_test_2d.csv")
+runAll()
