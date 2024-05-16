@@ -76,6 +76,7 @@
 #define CBOLTZ_CGS 1.380648813E-16			// CGS units
 #define WAVENUM_WING 50						// how many halfwidths to compute around center of voigt function
 #define SQRT_PI 1.77245385091
+#define ONE_OVER_SQRT_PI 0.56418958354
 
 // From MIT Implementation of Fadeeva function
 typedef struct clComplex cmplx;

@@ -28,10 +28,10 @@ import time
 import published_validation.hapiValidationFunctions as hvf
 import gaas_ocl as gs
 
-startWavenum = 7200
-endWavenum = 7600
-wavenumStep = 0.001 #wavenums per simulation step
-mol = 'CH4' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
+startWavenum = 7300
+endWavenum = 7400
+wavenumStep = 0.01 #wavenums per simulation step
+mol = 'H2O' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
 iso = 1 #isotopologue num
 T = 296 #K
 P = 1.0 #atm
@@ -89,7 +89,7 @@ f, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
 
 ax1.plot(nus,coefs)
 ax1.plot(nus_h,coefs_h)
-plt.xlim(7425,7455)
+# plt.xlim(7425,7455)
 ax1.legend(("GAAS","HAPI"))
 ax1.set_ylabel("Absorbance")
 
