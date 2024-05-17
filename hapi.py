@@ -19111,7 +19111,7 @@ def absorptionCoefficient_Voigt(Components=None,SourceTables=None,partitionFunct
             
             #   FILTER by LineIntensity: compare it with IntencityThreshold
             if LineIntensity < IntensityThreshold: continue
-            
+
             #   doppler broadening coefficient (GammaD)
             cMassMol = 1.66053873e-27 # hapi
             m = molecularMass(MoleculeNumberDB,IsoNumberDB) * cMassMol * 1000
