@@ -11,3 +11,4 @@ if __name__ == '__main__':
     install('PyQt5')
     install('pyqtgraph')
     install('matplotlib')
+    install('scanf')

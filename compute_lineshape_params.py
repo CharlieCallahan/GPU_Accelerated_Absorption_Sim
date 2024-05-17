@@ -216,6 +216,59 @@ def Eta(lineParams:dict, envParams: dict):
         eta += eta_diluent*diluent
     return eta
 
+def parseParFile(filename):
+    """
+        parse hitran .par file to produce a list of line parameters
+    """
+    with open(filename) as f:
+        for line in f:
+            print(line)
+
+            offset = 0
+            molec_id = int(line[offset:offset+2])
+            offset+=2
+            local_iso_id = int(line[offset:offset+1])
+            offset+=1
+            nu = float(line[offset:offset+12])
+            offset+=12
+            sw = float(line[offset:offset+10])
+            offset+=10
+            a = float(line[offset:offset+10])
+            offset+=10
+            gamma_air = float(line[offset:offset+5])
+            offset+=5
+            gamma_self = float(line[offset:offset+5])
+            offset+=5
+            elower = float(line[offset:offset+10])
+            offset+=10
+            n_air = float(line[offset:offset+4])
+            offset+=4
+            delta_air = float(line[offset:offset+8])
+            offset+=8
+            global_upper_quanta = line[offset:offset+15]
+            offset+=15
+            global_lower_quanta = line[offset:offset+15]
+            offset+=15
+            local_upper_quanta = line[offset:offset+15]
+            offset+=15
+            local_lower_quanta = line[offset:offset+15]
+            offset+=15
+            ierr = int(line[offset:offset+1])
+            offset+=1
+            iref = int(line[offset:offset+2])
+            offset+=2
+            # line_mixing_flag = line[offset:offset+1]
+            # offset+=1
+            # gp = float(line[offset:offset+7])
+            # offset+=7
+            # gpp = float(line[offset:offset+7])
+            # offset+=7
+            
+            
+            # print(scanf("%2d%1d%12.6f%10.3e%10.3e%5.4f%5.3f%10.4f%4.2f%8.6f%15s%15s%15s%15s%1d%2d%1s%7.1f%7.1f", line, collapseWhitespace=False))
+            # (molec_id, local_iso_id, nu, sw, a, gamma_air, gamma_self, elower, n_air, delta_air, global_upper_quanta, global_lower_quanta, local_upper_quanta,local_lower_quanta,ierr,iref, line_mixing_flag, gp, gpp) = scanf("%2d%1d%12.6f%10.3e%10.3e%5.4f%5.3f%10.4f%4.2f%8.6f%15s%15s%15s%15s%1d%2d%1s%7.1f%7.1f", line)
+            print((molec_id, local_iso_id, nu, sw, a, gamma_air, gamma_self, elower, n_air, delta_air, global_upper_quanta, global_lower_quanta, local_upper_quanta,local_lower_quanta,ierr,iref))
+    return
 """
 Generate a set of HTP parameters to pass to GAAS HTP generator
 """
