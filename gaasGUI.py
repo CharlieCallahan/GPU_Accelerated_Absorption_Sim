@@ -99,13 +99,11 @@ class LoadingWidget(QWidget):
     def start(self):
         # Set the loading message and start the timer
         self.label.setText("Loading")
-        # self.show()
         self.timer.start(1000)
 
     def stop(self):
         # Stop the timer and hide the widget
         self.timer.stop()
-        # self.hide()
 
     def updateMessage(self):
         # Update the loading message with ellipses
@@ -232,7 +230,6 @@ class PlotWindow(QDialog):
         self.nus,self.coefs = gaas.simVoigt(T,P,C,self.wavenumStep,self.startWavenum,self.endWavenum,self.mol,self.iso,self.absDB,self.tipsCalc)
 
     def updateMinWvn(self,value : float):
-        print("AAAAAAAAAAAA")
         self.startWavenum = value
         self.reloadMoleculeDB()
 
@@ -246,14 +243,12 @@ class PlotWindow(QDialog):
 
     def _reloadDBThread(self):
         self.dbLoadingIcon.show()
-        # self.dbLoadingIcon.start()
         temp = gaas.gen_abs_db(self.mol,self.iso,self.startWavenum,self.endWavenum,self.dbdir,loadFromHITRAN=True)
         self.dbLock.acquire()
         self.absDB = temp
         self.numLinesLabel.setText("Num Lines: " + str(len(self.absDB)))
         self.dbLock.release()
         self.updateSim()
-        # self.dbLoadingIcon.stop()
         self.dbLoadingIcon.hide()
     
     def setMolecule(self,molID):

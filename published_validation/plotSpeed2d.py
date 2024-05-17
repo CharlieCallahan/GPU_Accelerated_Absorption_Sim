@@ -13,7 +13,7 @@ if (len(sys.argv) < 2):
 
 fname = sys.argv[1]
 data = pd.read_csv(fname)
-p = data['meanHWHM']
+p = data['meanHWHM']*2000
 tGaas = data['gaasTime']
 tHapi = data['HAPITime']
 nlines = data['numFeats']
@@ -42,8 +42,9 @@ print(y.shape)
 axes.plot_surface(x.transpose(), y.transpose() , speedup_a,cmap=cm.coolwarm, linewidth=1.0, antialiased=False)
 axes.plot_wireframe(x.transpose(), y.transpose() , speedup_a, linewidth=1.0, rstride=1, cstride=1, color='k')
 
-plt.ylabel("Feature HWHM (cm-1)")
+plt.ylabel("FWHM / (Spectral Resolution)")
 plt.xlabel("Number of lines")
+plt.title("Hartmann Tran")
 axes.set_zlabel("Speedup", labelpad = 10)
 plt.show()
 
