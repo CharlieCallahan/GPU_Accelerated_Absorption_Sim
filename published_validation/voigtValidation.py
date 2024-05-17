@@ -228,7 +228,7 @@ def runSpeedTest2d_gaasonly(maxFeats: int, minHWHM: int, maxHWHM: int, numRuns: 
             j_hwhm = hwhms[j]
             feats = featGen.genNonRandomFeatures(startWvn,endWvn,int(i_nFeats),j_hwhm/2,j_hwhm/2)
             t1 = time.time()
-            # (wvn_gs,abs_gs) = gs.simHTP_legacy(feats[i],300,1.0,wvnStep,startWvn,endWvn)
+            # (wvn_gs,abs_gs) = gs.simHTP(feats[i],300,1.0,wvnStep,startWvn,endWvn)
             (wvn_gs,abs_gs) = gs.simVoigtRaw(feats,wvnStep,startWvn,endWvn)
 
             # plt.plot(wvn_gs,abs_gs)
@@ -263,7 +263,7 @@ def runSpeedTestGaasOnly(maxFeats: int, numRuns: int, randSeed:int) -> pd.DataFr
             print("nfeats: ",len(feats[i]))
             #prime it by running once before
             t1 = time.time()
-            # (wvn_gs,abs_gs) = gs.simHTP_legacy(feats[i],300,1.0,wvnStep,startWvn,endWvn)
+            # (wvn_gs,abs_gs) = gs.simHTP(feats[i],300,1.0,wvnStep,startWvn,endWvn)
             (wvn_gs,abs_gs) = gs.simVoigtRaw(feats[i],wvnStep,startWvn,endWvn)
 
             # plt.plot(wvn_gs,abs_gs)
@@ -291,4 +291,5 @@ def runAll():
     # res = runSpeedTest2d(10000, 0.1, 10, 10, 1)
     # res = runSpeedTest2d_gaasonly(10000, 0.1, 10, 10, 1)
     # res.to_csv(cwd+"\\voigt_speed_test_2d_gaas_new_adaptive.csv")
-runAll()
+if(__name__ == "__main__"):
+    runAll()

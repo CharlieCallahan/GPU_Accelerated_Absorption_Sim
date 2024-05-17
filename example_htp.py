@@ -29,16 +29,16 @@ import time
 import published_validation.htpValidation as htpVal
 
 startWavenum = 7000
-endWavenum = 80000
-wavenumStep = 0.05 #wavenums per simulation step
+endWavenum = 18000
+wavenumStep = 0.01 #wavenums per simulation step
 molarMass = 1.0
 tempK = 300
-feat_wavenums = np.linspace(startWavenum,endWavenum,10)
+feat_wavenums = np.linspace(startWavenum,endWavenum,3000) #generate 3000 evenly spaced transitions between 7000 and 18000
 feat_data = []
-for lc in feat_wavenums:
-    feat_data.append(gs.HTPFeatureData(lc,0.1,0.1,0.1,0.1,0.1,0.1,1.0))
+for lc in feat_wavenums[:-1]:
+    feat_data.append(gs.HTPFeatureData(lc,0.5,0.1,0.1,0.1,0.1,0.1,1.0))
 t0 = time.time()
-wvn, spec = gs.simHTP_legacy(feat_data,tempK,molarMass,wavenumStep,startWavenum,endWavenum)
+wvn, spec = gs.simHTP(feat_data,tempK,molarMass,wavenumStep,startWavenum,endWavenum)
 gaasTime = time.time()-t0
 plt.plot(wvn,spec)
 plt.show()
