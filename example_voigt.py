@@ -19,22 +19,23 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
 
-import gaas as gs
 import os
+os.environ["GAAS_OCL_DEVICE"] = '0' #set to the device number you want to use if you have multiple GPUs
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import time
 import published_validation.hapiValidationFunctions as hvf
+import gaas_ocl as gs
 
 startWavenum = 7200
 endWavenum = 7600
-wavenumStep = 0.005 #wavenums per simulation step
-mol = 'H2O' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
+wavenumStep = 0.001 #wavenums per simulation step
+mol = 'CH4' #molecule name
 iso = 1 #isotopologue num
-T = 300 #K
-P = 5.0 #atm
-conc = 0.1
+T = 2300 #K
+P = 1.0 #atm
+conc = 0.02
 #pathlength is assumed to be 1cm, if you want to use a different pathlenth, scale the absorbance by pl_cm
 
 cwd = os.path.dirname(os.path.realpath(__file__))
@@ -59,7 +60,7 @@ if (not os.path.isdir(dbdir)):
 #initialize GAAS and create GAAS database file for the wavenumber range and molecule you want to simulate
 #This needs to be called once for each molecule/isotope you want to simulate.
 #Once GAAS binary files are generated, they can be re-used by different runs for the same molecule/isotope.
-gs.init(startWavenum,endWavenum,mol,iso,gaasDirPath,dbdir,"runTest",loadFromHITRAN=True)
+absDB = gs.gen_abs_db(mol,iso,startWavenum,endWavenum,dbdir,0,loadFromHITRAN=True)
                            #(tempK, pressureAtm, conc,  wavenumRes, startWavenum, endWavenum, moleculeID)
 
 print("Running HAPI simulation...\n")
@@ -68,8 +69,7 @@ nus_h,coefs_h = hvf.runHAPI(T, P, conc, wavenumStep, startWavenum, endWavenum, m
 t0_h = time.time()
 
 t1 = time.time()
-
-nus, coefs = gs.simVoigt(T, P,conc,wavenumStep,startWavenum,endWavenum,gaasDirPath,mol,iso,"runTest")
+nus, coefs = gs.simVoigt(T,P,conc,wavenumStep,startWavenum,endWavenum,mol,iso,absDB,gs.get_tips_calc(mol,iso))
 
 print("GAAS sim time: ",time.time()-t1)
 print("HAPI sim time: ",t0_h-t0)
@@ -83,12 +83,16 @@ def getError(nus_h,coefs_h,nus_g,coefs_g):
     return err/sum
 
 print("Simulation error = ",getError(nus_h,coefs_h,nus,coefs)*100,"%")
-plt.plot(nus,coefs)
-plt.plot(nus_h,coefs_h)
 
-plt.plot(nus,coefs-coefs_h)
+f, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
 
-plt.ylabel("absorbance")
+ax1.plot(nus,coefs)
+ax1.plot(nus_h,coefs_h)
+ax1.legend(("GAAS","HAPI"))
+ax1.set_ylabel("Absorbance")
+
+ax2.plot(nus,coefs_h-coefs)
+ax2.set_ylabel("Absolute Error")
+
 plt.xlabel("wavenumber (cm-1)")
-plt.legend(("GAAS","HAPI","Error"))
 plt.show()

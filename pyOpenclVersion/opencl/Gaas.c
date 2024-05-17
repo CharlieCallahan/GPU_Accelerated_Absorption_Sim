@@ -1505,7 +1505,10 @@ double lineStrength(double pSumT, double pSumTref, double refStrength, double eP
 {
 	double c2 = 1.4388028496642257; // cm*K
 	double Tref = 296;				// K
-	return refStrength * pSumTref / pSumT * exp(-1 * c2 * ePrimePrime / tempK) / exp(-1 * c2 * ePrimePrime / Tref) * (1 - exp(-1 * c2 * transWavenum / tempK)) / (1 - exp(-1 * c2 * transWavenum / Tref));
+	double ch = exp(-c2*ePrimePrime/tempK)*(1-exp(-c2*transWavenum/tempK));
+    double zn = exp(-c2*ePrimePrime/Tref)*(1-exp(-c2*transWavenum/Tref));
+	return refStrength * pSumTref / pSumT * ch / zn;
+	// return refStrength * pSumTref / pSumT * exp(-1 * c2 * ePrimePrime / tempK) / exp(-1 * c2 * ePrimePrime / Tref) * (1 - exp(-1 * c2 * transWavenum / tempK)) / (1 - exp(-1 * c2 * transWavenum / Tref));
 }
 
 int toWavenumIndex(double startWavenum, double wavenumStep, double wavenumInput)

@@ -80,7 +80,7 @@ def getErrorHTP(features : list[gs.HTPFeatureData], tempK : float, molarMass : f
 
     print("Running GAAS HTP")
     t1 = time.time()
-    (wvn_gs,abs_gs) = gs.simHTP_legacy(features,tempK,molarMass,wavenumStep,startWavenum,endWavenum)
+    (wvn_gs,abs_gs) = gs.simHTP(features,tempK,molarMass,wavenumStep,startWavenum,endWavenum)
     gTime = time.time() - t1
 
     print("Running HAPI")
@@ -212,7 +212,7 @@ def runSpeedTestGaasOnly(maxFeats: int, numRuns: int, randSeed:int) -> pd.DataFr
             print("nfeats: ",len(feats[i]))
             #prime it by running once before
             t1 = time.time()
-            (wvn_gs,abs_gs) = gs.simHTP_legacy(feats[i],300,1.0,wvnStep,startWvn,endWvn)
+            (wvn_gs,abs_gs) = gs.simHTP(feats[i],300,1.0,wvnStep,startWvn,endWvn)
             # plt.plot(wvn_gs,abs_gs)
             # plt.show()
             gTime = time.time() - t1
@@ -247,7 +247,7 @@ def runSingleGaasOnly(maxFeats: int, numRuns: int, randSeed:int) -> pd.DataFrame
             print("nfeats: ",len(feats[i]))
             #prime it by running once before
             t1 = time.time()
-            (wvn_gs,abs_gs) = gs.simHTP_legacy(feats[i],300,1.0,wvnStep,startWvn,endWvn)
+            (wvn_gs,abs_gs) = gs.simHTP(feats[i],300,1.0,wvnStep,startWvn,endWvn)
 
             plt.plot(wvn_gs,abs_gs)
             plt.show()
@@ -276,7 +276,7 @@ def genComparisonPlot_data()->pd.DataFrame:
     featureSets.append(featGen.genFeatures(startWvn,endWvn,numFeatures))
 
     t1 = time.time()
-    (wvn_gs,abs_gs) = gs.simHTP_legacy(featureSets[0],300,1, wvnStep,startWvn,endWvn)
+    (wvn_gs,abs_gs) = gs.simHTP(featureSets[0],300,1, wvnStep,startWvn,endWvn)
     gTime = time.time() - t1
 
     print("Running HAPI")
@@ -328,14 +328,14 @@ def runSpeedTest2d_gaasonly(maxFeats: int, minHWHM: int, maxHWHM: int, numRuns: 
     feats = []
     out = []
 
-    for j in range(numRuns): #hwhm
-        for i in range(numRuns): #nlines
-            i_nFeats = nfeats[i]
-            j_hwhm = hwhms[j]
-            feats = featGen.genNonRandomFeatures(startWvn,endWvn,int(i_nFeats),j_hwhm)
-            t1 = time.time()
-            (wvn_gs,abs_gs) = gs.simHTP_legacy(feats,300,1.0,wvnStep,startWvn,endWvn)
-            # (wvn_gs,abs_gs) = gs.simVoigtRaw(feats,wvnStep,startWvn,endWvn)
+#     for j in range(numRuns): #hwhm
+#         for i in range(numRuns): #nlines
+#             i_nFeats = nfeats[i]
+#             j_hwhm = hwhms[j]
+#             feats = featGen.genNonRandomFeatures(startWvn,endWvn,int(i_nFeats),j_hwhm/2,j_hwhm/2)
+#             t1 = time.time()
+#             # (wvn_gs,abs_gs) = gs.simHTP(feats[i],300,1.0,wvnStep,startWvn,endWvn)
+#             (wvn_gs,abs_gs) = gs.simVoigtRaw(feats,wvnStep,startWvn,endWvn)
 
             # plt.plot(wvn_gs,abs_gs)
             # plt.show()
@@ -362,4 +362,6 @@ def runAll():
     # HT2d.to_csv(cwd+"\\htp_2d.csv")
     # runSingleGaasOnly(256000, 60, 1)
     # speedGAASRes.to_csv(cwd+"\\htp_speed_gaas_random.csv")
-runAll()
+
+if(__name__ == "__main__"):
+    runAll()

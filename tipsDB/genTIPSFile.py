@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 import csv
 import os
+import hapi
 # Copyright (c) 2021 Charlie Callahan
 
 # Permission is hereby granted, free of charge, to any person obtaining
@@ -152,6 +153,9 @@ class TIPsCalculator:
 	"""
 	def __init__(self, molID, isoID) -> None:
 		mol = molecules.index(molID)
+		self.MID = mol
+		self.ISO = isoID
+
 		if not ((mol>0) and (mol<=57) and mol!=34): 
 			print("Error: generateTIPSFile: molecule: ", molID," not found.")
 			exit(-1)
@@ -191,8 +195,10 @@ class TIPsCalculator:
 			self.Q[T] = QT
 	
 	def getQ(self, temp):
-		T0 = int(temp)
-		T1 = T0+1
-		Q0 = self.Q[T0]
-		Q1 = self.Q[T1]
-		return Q0 + (Q1-Q0)*(temp-T0)
+		return hapi.BD_TIPS_2017_PYTHON(self.MID,self.ISO,temp)[1]
+
+		# T0 = int(temp)
+		# T1 = T0+1
+		# Q0 = self.Q[T0]
+		# Q1 = self.Q[T1]
+		# return Q0 + (Q1-Q0)*(temp-T0)
