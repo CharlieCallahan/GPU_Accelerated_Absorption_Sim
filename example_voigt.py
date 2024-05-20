@@ -33,7 +33,7 @@ endWavenum = 7600
 wavenumStep = 0.001 #wavenums per simulation step
 mol = 'CH4' #molecule name
 iso = 1 #isotopologue num
-T = 2300 #K
+T = 300 #K
 P = 1.0 #atm
 conc = 0.02
 #pathlength is assumed to be 1cm, if you want to use a different pathlenth, scale the absorbance by pl_cm

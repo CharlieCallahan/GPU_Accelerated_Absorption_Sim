@@ -113,7 +113,6 @@ class Gaas_OCL_API:
                 isoAbundance : float,
                 wvnGrid = None
                 ):
-        
         wvn_np  = np.arange(wvnStart,wvnEnd,wvnStep).astype(np.float64)
         wvn_g = cl.Buffer(self.ctx, self.mf.READ_ONLY | self.mf.COPY_HOST_PTR, wvn_np.nbytes, hostbuf = wvn_np) #wvns
         abs_g = cl.Buffer(self.ctx, self.mf.WRITE_ONLY, wvn_np.nbytes) #absorbance
@@ -121,21 +120,33 @@ class Gaas_OCL_API:
         db_g = cl.Buffer(self.ctx, self.mf.READ_ONLY | self.mf.COPY_HOST_PTR, featureDatabase.nbytes, hostbuf = featureDatabase) #feature DB
 
         knl = self.prg.lineshapeVoigt
-        knl(self.queue,featureDatabase.shape,None,
-            wvn_g,
-            db_g,
-            abs_g,
-            np.float64(temp),
-            np.float64(pressure),
-            np.float64(concentration),
-            np.float64(tipsRef),
-            np.float64(tipsTemp),
-            np.float64(wvnStart),
-            np.float64(wvnStep),
-            np.int32(wvn_np.size),
-            np.float64(molarMass),
-            np.float64(isoAbundance))
         
+        linesperbatch = 6000
+        offset = 0
+        numFeats = featureDatabase.size
+        while(offset<=np.size(featureDatabase)):
+            nleft = numFeats-offset
+            kernelSize = min(nleft,linesperbatch)
+            if(kernelSize == 0):
+                break
+            knl(self.queue,(kernelSize,),None,
+                wvn_g,
+                db_g,
+                abs_g,
+                np.float64(temp),
+                np.float64(pressure),
+                np.float64(concentration),
+                np.float64(tipsRef),
+                np.float64(tipsTemp),
+                np.float64(wvnStart),
+                np.float64(wvnStep),
+                np.int32(wvn_np.size),
+                np.float64(molarMass),
+                np.float64(isoAbundance),
+                np.int32(offset))
+            
+            offset+=linesperbatch
+
         self.queue.finish()
 
         abs_np = np.empty_like(wvn_np)
