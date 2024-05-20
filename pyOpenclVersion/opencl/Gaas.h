@@ -217,7 +217,8 @@ __kernel void lineshapeVoigt(__global const double *wavenums,
 							double wavenumStep, 
 							int wavenumCount, 
 							double molarMass, 
-							double isotopeAbundance);
+							double isotopeAbundance,
+							int offset);
 
 __kernel void lineshapeVoigt_raw(__global const double *wavenums,
 							__global const struct featureDataVoigtRaw *features, 
