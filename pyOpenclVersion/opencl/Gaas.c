@@ -1528,10 +1528,11 @@ __kernel void lineshapeVoigt(__global const double *wavenums,
 					double wavenumStep, 
 					int wavenumCount, 
 					double molarMass, 
-					double isotopeAbundance)
+					double isotopeAbundance,
+					int offset)
 {
 
-	int i = get_global_id(0);
+	int i = get_global_id(0) + offset;
 	// output[i] = i;
 	// return;
 	// compute voigt parameters:

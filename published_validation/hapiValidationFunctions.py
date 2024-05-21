@@ -15,7 +15,13 @@ def runHAPI(tempK, pressureAtm, conc,  wavenumStep, startWavenum, endWavenum, mo
     HITRAN_molecules = ['H2O', 'CO2', 'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3',
                         'OH', 'HF', 'HCl', 'HBr', 'HI', 'ClO', 'OCS', 'H2CO', 'HOCl', 'N2', 'HCN', 'CH3Cl', 'H2O2', 'C2H2', 'C2H6', 'PH3', 'COF2', 'SF6', 'H2S', 'HCOOH', 'HO2', 'O', 'ClONO2',
                         'NO+', 'HOBr', 'C2H4', 'CH3OH', 'CH3Br', 'CH3CN', 'CF4', 'C4H2', 'HC3N', 'H2', 'CS', 'SO3']
-    molecule_number = (HITRAN_molecules.index(moleculeID)) + 1
+    try:
+        molecule_number = (HITRAN_molecules.index(moleculeID)) + 1
+    except:
+        molecule_list = []
+        [molecule_list.append(idx+1) for idx, molec in enumerate(HITRAN_molecules) if
+         molec in moleculeID]
+        molecule_number = int(molecule_list[0])
 
     nus, coefs = hapi.absorptionCoefficient_Voigt(Components=[(molecule_number, isotopologueID, conc)],
                                                   SourceTables=moleculeID,
