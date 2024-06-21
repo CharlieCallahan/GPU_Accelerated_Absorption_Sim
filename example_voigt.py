@@ -32,12 +32,12 @@ import gaas_ocl as gs
 
 startWavenum = 5980
 endWavenum = 6150
-wavenumStep = 0.003  # wavenums per simulation step
+wavenumStep = 0.00667  # wavenums per simulation step
 mol = "CH4_HITEMP"  # molecule name
 iso = 1  # isotopologue num
-T = 3000  # K
-P = 1.0  # atm
-conc = 0.02
+T = 300  # K
+P = 0.921053  # atm
+conc = 0.05
 # pathlength is assumed to be 1cm, if you want to use a different pathlenth, scale the absorbance by pl_cm
 
 cwd = os.path.dirname(os.path.realpath(__file__))
