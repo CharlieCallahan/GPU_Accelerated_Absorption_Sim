@@ -1,4 +1,5 @@
 # GPU Accelerated Absorption Simulation (GAAS)
+[![DOI](https://zenodo.org/badge/418651314.svg)](https://zenodo.org/doi/10.5281/zenodo.13743475)
 A python based rapid and accurate broadband gas spectrum simulator that supports both Voigt and HTP based line shapes. Orders of magnitude faster than HAPI for spectra with more than 1000 absorption transitions. Based on a natively written OpenCL implementation of the complex error function which is derived from [http://ab-initio.mit.edu/wiki/index.php/Faddeeva_Package]. 
 
 # Installation
