@@ -14,7 +14,7 @@ import gaas_ocl as gaas
 import os
 
 class FloatSlider(QWidget):
-    def __init__(self, min, max, name):
+    def __init__(self, min, max, name, defaultVal=None):
         QWidget.__init__(self)
         self.min = min
         self.max = max
@@ -23,9 +23,14 @@ class FloatSlider(QWidget):
         self.layout.addWidget(label_name, stretch=1)
         self.slider = QSlider(Qt.Horizontal, self)
         self.slider.setRange(0,1000)
-        self.slider.setSliderPosition(500)
+        if defaultVal:
+            self.slider.setSliderPosition(int((defaultVal-min)/(max-min)*1000))
+            self.label_val = QLabel(str(defaultVal))
+        else:
+            self.slider.setSliderPosition(500)
+            self.label_val = QLabel(str((max-min)/2))
+        
         self.layout.addWidget(self.slider, stretch=4)
-        self.label_val = QLabel(str((max-min)/2))
         self.layout.addWidget(self.label_val)
         self.setLayout(self.layout)
         self.slider.valueChanged[int].connect(self.updateVal)
@@ -162,10 +167,10 @@ class PlotWindow(QDialog):
         self.mainLayout.addWidget(self.plot,0,0)
         self.make_sliders()
 
-        self.startWavenum = 6020
-        self.endWavenum = 6130
+        self.startWavenum = 2200
+        self.endWavenum = 2400
         self.wavenumStep = 0.007 #wavenums per simulation step
-        self.mol = 'H2O' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
+        self.mol = 'CO2' #'O3', 'N2O', 'CO', 'CH4', 'O2', 'NO', 'SO2', 'NO2', 'NH3', 'HNO3'
         self.iso = 1 #isotopologue num
         cwd = os.path.dirname(os.path.realpath(__file__))
         if sys.platform == 'win32' or sys.platform == 'win64':
@@ -188,6 +193,8 @@ class PlotWindow(QDialog):
         self.dbLock = threading.Lock()
 
         self.moleculeSelector = DropdownMenu(gaas.getHITRANMolecules())
+        #set to the self.mol
+        self.moleculeSelector.dropdown.setCurrentIndex(gaas.getHITRANMolecules().index(self.mol))
         self.moleculeSelector.set_callback(self.setMolecule)
         self.mainLayout.addWidget(self.moleculeSelector)
         
@@ -208,9 +215,9 @@ class PlotWindow(QDialog):
         self.plot.plot(self.nus, self.coefs, pen = pen, clear=True)
 
     def make_sliders(self):
-        self.Temp = FloatSlider(200,4000,"Temp (K)")
+        self.Temp = FloatSlider(200,4000,"Temp (K)",300)
         self.Conc = FloatSlider(0.001,0.5,"Concentration")
-        self.Pressure = FloatSlider(0.1,50,"Pressure")
+        self.Pressure = FloatSlider(0.1,50,"Pressure",1)
         self.mainLayout.addWidget(self.Temp)
         self.mainLayout.addWidget(self.Conc)
         self.mainLayout.addWidget(self.Pressure)

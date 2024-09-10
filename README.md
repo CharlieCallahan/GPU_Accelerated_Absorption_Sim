@@ -16,6 +16,7 @@ The repo comes with an example GUI to get you started. Run it with the following
 ```bash
 python gaasGUI.py
 ```
+![Alt Text](./assets/GAAS_GUI.png?raw=true "Title")
 
 # Example
 Additionally, the repo includes some example code to demonstrate how to run spectrum simulations using GAAS (example_voigt.py and example_htp.py).
