@@ -12,3 +12,5 @@ if __name__ == '__main__':
     install('pyqtgraph')
     install('matplotlib')
     install('scanf')
+    install('numpy')
+    install('pandas')

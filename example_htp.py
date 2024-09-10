@@ -40,8 +40,6 @@ for lc in feat_wavenums[:-1]:
 t0 = time.time()
 wvn, spec = gs.simHTP(feat_data,tempK,molarMass,wavenumStep,startWavenum,endWavenum)
 gaasTime = time.time()-t0
-plt.plot(wvn,spec)
-plt.show()
 print("gaas time: ",gaasTime)
 
 t0=time.time()
@@ -53,4 +51,5 @@ plt.plot(spec)
 plt.plot(spech)
 plt.plot((spec-spech))
 plt.legend(("GAAS","HAPI","Residual"))
+plt.title("Synthetic HTP Spectrum Comparison")
 plt.show()
