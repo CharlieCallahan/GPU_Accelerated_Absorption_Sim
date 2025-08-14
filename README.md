@@ -24,4 +24,13 @@ python gaasGUI.py
 Additionally, the repo includes some example code to demonstrate how to run spectrum simulations using GAAS (example_voigt.py and example_htp.py).
 
 # Paper
-Please cite us if you use this code in your research. The paper is currently under review.
+Please cite us if you use this code in your research.
+doi: https://doi.org/10.1016/j.jqsrt.2024.109307
+
+Charles S. Callahan, Sean M. Bresler, Sean C. Coburn, David A. Long, Gregory B. Rieker,
+GAAS: GPU accelerated absorption simulator,
+Journal of Quantitative Spectroscopy and Radiative Transfer,
+Volume 333,
+2025,
+109307,
+ISSN 0022-4073
